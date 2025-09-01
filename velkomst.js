@@ -1,75 +1,61 @@
 import fs from "fs";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
+
 dotenv.config();
 
-const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
-const LAT = process.env.LAT;
-const LON = process.env.LON;
-const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
-const VOICE_ID = process.env.VOICE_ID;
-
 async function getWeather() {
-  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${LAT}&lon=${LON}&units=metric&lang=no&appid=${OPENWEATHER_API_KEY}`;
+  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${process.env.LAT}&lon=${process.env.LON}&appid=${process.env.OPENWEATHER_API_KEY}&units=metric&lang=no`;
+
+  console.log("🔎 Hentar vær frå:", url);
+
   const res = await fetch(url);
-  if (!res.ok) throw new Error("Feil frå OpenWeather");
-  const data = await res.json();
-  return {
-    temp: Math.round(data.main.temp),
-    description: data.weather[0].description
-  };
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Feil frå OpenWeather (${res.status}): ${text}`);
+  }
+  return res.json();
 }
 
-function getRandomGreeting() {
-  const meldinger = [
-    "Hei, og velkomen heim!",
-    "Så kjekt å sjå deg att!",
-    "Hallo, håpar dagen din har vore fin!",
-    "Velkomen, no kan du slappe av!",
-    "Der var du! Velkomen heim!"
+function lagMelding(weather) {
+  const dato = new Date();
+  const dagar = ["søndag", "måndag", "tysdag", "onsdag", "torsdag", "fredag", "laurdag"];
+  const dag = dagar[dato.getDay()];
+
+  const temperatur = Math.round(weather.main.temp);
+  const beskrivelse = weather.weather[0].description;
+
+  const meldingar = [
+    `Velkomen heim! I dag er det ${dag}. Ute er det ${temperatur} grader og ${beskrivelse}.`,
+    `Hei! Så kjekt å sjå deg. ${dag} i dag – ute ${temperatur} grader og ${beskrivelse}.`,
+    `Hallo der! Denne fine ${dag} byr på ${beskrivelse} og ${temperatur} grader ute.`,
+    `Vel møtt! Det er ${dag}, ute ${temperatur} grader med ${beskrivelse}.`,
+    `God ${dag}! Ute er det ${beskrivelse} og ${temperatur} grader.`,
   ];
-  return meldinger[Math.floor(Math.random() * meldinger.length)];
+
+  const tilfeldig = meldingar[Math.floor(Math.random() * meldingar.length)];
+  return `${tilfeldig} Inne held vi 22 grader stabilt.`;
 }
 
 async function generateSpeech(text) {
-  const url = `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}/stream`;
+  const url = "https://api.elevenlabs.io/v1/text-to-speech/" + process.env.VOICE_ID;
   const res = await fetch(url, {
     method: "POST",
     headers: {
-      "xi-api-key": ELEVENLABS_API_KEY,
-      "Content-Type": "application/json"
+      "xi-api-key": process.env.ELEVENLABS_API_KEY,
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
       text,
-      model_id: "eleven_multilingual_v3_alpha",
-      voice_settings: {
-        stability: 0.5,
-        similarity_boost: 0.7
-      }
-    })
+      voice_settings: { stability: 0.3, similarity_boost: 0.8 },
+    }),
   });
-  if (!res.ok) throw new Error("Feil frå ElevenLabs: " + res.status + " " + res.statusText);
-  const buffer = Buffer.from(await res.arrayBuffer());
-  fs.writeFileSync("velkomst.mp3", buffer);
-}
 
-async function main() {
-  try {
-    const weather = await getWeather();
-    const greeting = getRandomGreeting();
-    const now = new Date();
-    const dato = now.toLocaleDateString("nn-NO", { weekday: "long", day: "numeric", month: "long" });
-    const klokke = now.toLocaleTimeString("nn-NO", { hour: "2-digit", minute: "2-digit" });
-
-    const melding = `${greeting} I dag er det ${dato}, klokka er ${klokke}. Inne er det 22 grader. Ute er det ${weather.temp} grader og ${weather.description}.`;
-
-    console.log("📢 Velkomstmelding:", melding);
-    await generateSpeech(melding);
-    console.log("✅ Lydfil lagra som velkomst.mp3");
-  } catch (err) {
-    console.error("❌ Feil:", err);
-    process.exit(1);
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Feil frå ElevenLabs (${res.status}): ${text}`);
   }
-}
 
-main();
+  const arrayBuffer = await res.arrayBuffer();
+  fs.writeFileSync("velkomst.mp3", Buffer.from(arrayBuffer));
+  console.
