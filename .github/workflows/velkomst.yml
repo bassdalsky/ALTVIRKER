@@ -1,36 +1,43 @@
-name: Velkomstmelding
+name: Bygg og publiser velkomst
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # køyrer manuelt frå GitHub
+  schedule:
+    - cron: "0 6 * * *" # køyrer kvar dag kl 06:00
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Sjekk ut repo
-      uses: actions/checkout@v4
+      - name: Sjekk ut kode
+        uses: actions/checkout@v4
 
-    - name: Set opp Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20
+      - name: Set opp Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
 
-    - name: Installer avhengigheiter
-      run: npm install
+      - name: Installer avhengigheiter
+        run: npm install
 
-    - name: Kjør velkomst.js
-      run: node velkomst.js
-      env:
-        OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
-        LAT: ${{ secrets.LAT }}
-        LON: ${{ secrets.LON }}
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
-        VOICE_ID: ${{ secrets.VOICE_ID }}
+      - name: Kjør velkomst
+        env:
+          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+          LAT: ${{ secrets.LAT }}
+          LON: ${{ secrets.LON }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          VOICE_ID: ${{ secrets.VOICE_ID }}
+        run: node velkomst.js
 
-    - name: Last opp mp3 som artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: velkomst-melding
-        path: velkomst.mp3
+      - name: Kopier mp3 til docs
+        run: |
+          mkdir -p docs
+          cp velkomst.mp3 docs/
+
+      - name: Publiser til GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
