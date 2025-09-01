@@ -1,12 +1,13 @@
-name: Velkomst
+name: Bygg velkomstmelding
 
 on:
-  workflow_dispatch:   # 🚀 Kjør manuelt frå GitHub
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * *" # køyres kvar dag kl 06:00
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Sjekk ut kode
         uses: actions/checkout@v4
@@ -17,21 +18,14 @@ jobs:
           node-version: 20
 
       - name: Installer avhengigheter
-        run: npm install node-fetch dotenv
+        run: npm install
 
       - name: Kjør velkomst
         run: node velkomst.js
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
-          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
-          LAT: ${{ secrets.LAT }}
-          LON: ${{ secrets.LON }}
-          VOICE_ID: ${{ secrets.VOICE_ID }}
 
-      - name: Last opp lydfil som artifact
+      - name: Last opp MP3 som artifact
         uses: actions/upload-artifact@v4
         with:
-          name: velkomst-lyd
+          name: velkomst-melding
           path: velkomst.mp3
           if-no-files-found: error
