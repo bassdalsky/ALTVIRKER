@@ -1,9 +1,9 @@
-name: Generer daglig velkomst-melding
+name: Generer velkomst-melding
 
 on:
   schedule:
-    - cron: "0 4 * * *"   # 06:00 norsk tid (UTC+2 / sommertid, +1 vinter)
-  workflow_dispatch:
+    - cron: "0 6 * * *"   # Kjør hver dag kl. 06:00 norsk tid (GitHub bruker UTC, så vi må evt. justere)
+  workflow_dispatch:       # Lar deg fortsatt kjøre manuelt om du vil
 
 jobs:
   build:
@@ -36,5 +36,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add velkomst.mp3
-          git commit -m "Oppdatert velkomstmelding" || echo "Ingen endringer å committe"
+          git commit -m "Ny velkomstmelding"
           git push
