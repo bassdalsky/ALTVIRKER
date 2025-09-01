@@ -1,4 +1,4 @@
-name: Generer velkomstmelding
+name: Generer velkomst-melding
 
 on:
   workflow_dispatch:
@@ -6,6 +6,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Sjekk ut repo
         uses: actions/checkout@v4
@@ -16,65 +17,21 @@ jobs:
           node-version: 18
 
       - name: Installer avhengigheter
-        run: npm install node-fetch@2
+        run: npm install node-fetch dotenv
 
-      - name: Generer velkomst-mp3
+      - name: Kjør script
+        run: node velkomst.js
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
           VOICE_ID: ${{ secrets.VOICE_ID }}
-        run: |
-          node <<'EOF'
-          const fetch = require("node-fetch");
-          const fs = require("fs");
-
-          const apiKey = process.env.OPENAI_API_KEY;
-          const weatherKey = process.env.OPENWEATHER_API_KEY;
-          const elevenKey = process.env.ELEVENLABS_API_KEY;
-          const voiceId = process.env.VOICE_ID;
-
-          async function getWeather() {
-            const url = `https://api.openweathermap.org/data/2.5/weather?lat=61.45&lon=5.85&units=metric&lang=no&appid=${weatherKey}`;
-            const res = await fetch(url);
-            const data = await res.json();
-            return `${data.weather[0].description}, ${Math.round(data.main.temp)} grader`;
-          }
-
-          async function getMessage() {
-            const weather = await getWeather();
-            return `Hei Stig! Velkommen hjem. Akkurat nå er det ${weather}.`;
-          }
-
-          async function generateTTS(text) {
-            const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`;
-            const res = await fetch(url, {
-              method: "POST",
-              headers: {
-                "xi-api-key": elevenKey,
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({
-                text,
-                model_id: "eleven_multilingual_v3",
-                voice_settings: { stability: 0.5, similarity_boost: 0.7 }
-              })
-            });
-            const buffer = Buffer.from(await res.arrayBuffer());
-            fs.writeFileSync("velkomst.mp3", buffer);
-            console.log("✅ velkomst.mp3 generert!");
-          }
-
-          (async () => {
-            const msg = await getMessage();
-            await generateTTS(msg);
-          })();
-          EOF
 
       - name: Commit og push mp3
         run: |
-          git config user.name github-actions
-          git config user.email github-actions@github.com
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add velkomst.mp3
-          git commit -m "Oppdatert velkomst.mp3" || echo "Ingen endringer"
+          git commit -m "Oppdatert velkomst-melding" || echo "Ingen endringer å committe"
           git push
+
