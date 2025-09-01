@@ -2,8 +2,8 @@ name: Generer velkomst-melding
 
 on:
   schedule:
-    - cron: "0 6 * * *"   # Kjør hver dag kl. 06:00 norsk tid (GitHub bruker UTC, så vi må evt. justere)
-  workflow_dispatch:       # Lar deg fortsatt kjøre manuelt om du vil
+    - cron: "0 4 * * *"   # Kjør daglig kl 04:00 UTC (06:00 norsk tid)
+  workflow_dispatch:
 
 jobs:
   build:
