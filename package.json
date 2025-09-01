@@ -1,6 +1,7 @@
 {
   "name": "velkomst",
   "version": "1.0.0",
+  "description": "Velkomstmelding med vær og norsk tale",
   "main": "velkomst.js",
   "type": "module",
   "scripts": {
