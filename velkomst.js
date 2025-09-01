@@ -1,3 +1,4 @@
+// velkomst.js
 import fs from "fs";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
@@ -7,62 +8,67 @@ dotenv.config();
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
-const VOICE_ID = process.env.VOICE_ID;
-const LAT = process.env.LAT;
-const LON = process.env.LON;
 
-if (!OPENAI_API_KEY || !OPENWEATHER_API_KEY || !ELEVENLABS_API_KEY || !VOICE_ID || !LAT || !LON) {
-  console.error("[FEIL] Manglar ein eller fleire miljøvariablar.");
-  process.exit(1);
-}
+// Koordinater for Skilbrei
+const LAT = 61.3931;
+const LON = 5.7815;
 
-async function hentVær() {
-  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${LAT}&lon=${LON}&units=metric&lang=no&appid=${OPENWEATHER_API_KEY}`;
+async function hentVaer() {
+  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${LAT}&lon=${LON}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=no`;
   const res = await fetch(url);
-  if (!res.ok) throw new Error("Klarte ikkje hente værdata.");
+  if (!res.ok) throw new Error("Klarte ikke hente værdata");
   const data = await res.json();
-  return {
-    temp: Math.round(data.main.temp),
-    beskrivelse: data.weather[0].description
-  };
+  return `I dag er det ${Math.round(data.main.temp)} grader og ${data.weather[0].description}.`;
 }
 
-async function lagTekst() {
-  const vær = await hentVær();
-  const nå = new Date();
-  const klokkeslett = nå.toLocaleTimeString("no-NO", { hour: "2-digit", minute: "2-digit" });
-  return `God dag! Klokka er ${klokkeslett}. Temperaturen er ${vær.temp} grader, med ${vær.beskrivelse}. Velkommen heim til Skilbrei!`;
+async function genererTekst() {
+  const dato = new Date().toLocaleDateString("no-NO", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+
+  const vaer = await hentVaer();
+
+  const hilsninger = [
+    `God morgen! I dag er det ${dato}. ${vaer}`,
+    `Hei hei! Velkommen til en ny dag, ${dato}. ${vaer}`,
+    `Ny dag, nye muligheter! I dag er det ${dato}. ${vaer}`,
+  ];
+
+  const melding = hilsninger[Math.floor(Math.random() * hilsninger.length)];
+  return melding + " Ha en fin dag videre!";
 }
 
 async function lagLyd(tekst) {
-  const url = `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`;
+  const url = "https://api.elevenlabs.io/v1/text-to-speech/eleven_multilingual_v3_alpha/stream";
   const res = await fetch(url, {
     method: "POST",
     headers: {
+      "xi-api-key": ELEVENLABS_API_KEY,
       "Content-Type": "application/json",
-      "xi-api-key": ELEVENLABS_API_KEY
     },
     body: JSON.stringify({
       text: tekst,
-      voice_settings: { stability: 0.5, similarity_boost: 0.7 }
-    })
+      model_id: "eleven_multilingual_v3_alpha",
+      voice_settings: { stability: 0.5, similarity_boost: 0.8 },
+    }),
   });
 
-  if (!res.ok) throw new Error("Feil frå ElevenLabs API.");
+  if (!res.ok) throw new Error(`Feil fra ElevenLabs: ${res.statusText}`);
+
   const buffer = Buffer.from(await res.arrayBuffer());
   fs.writeFileSync("velkomst.mp3", buffer);
-  console.log("[OK] Lydfila 'velkomst.mp3' er generert.");
+  console.log("✅ Ny velkomstmelding generert: velkomst.mp3");
 }
 
-async function main() {
+(async () => {
   try {
-    const tekst = await lagTekst();
-    console.log("[INFO] Generert tekst:", tekst);
+    const tekst = await genererTekst();
+    console.log("Generert tekst:", tekst);
     await lagLyd(tekst);
   } catch (err) {
     console.error("[FEIL]", err.message);
     process.exit(1);
   }
-}
-
-main();
+})();
