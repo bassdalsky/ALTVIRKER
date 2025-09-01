@@ -1,40 +1,36 @@
-name: Bygg og køyr velkomstmelding
+name: Velkomstmelding
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 6 * * *" # køyr kvar dag kl 06:00 norsk tid (UTC +2 om sommaren)
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Sjekk ut kode
-        uses: actions/checkout@v4
+    - name: Sjekk ut repo
+      uses: actions/checkout@v4
 
-      - name: Sett opp Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
+    - name: Set opp Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
 
-      - name: Installer avhengigheiter
-        run: npm install
+    - name: Installer avhengigheiter
+      run: npm install
 
-      - name: Lag .env-fil frå secrets
-        run: |
-          echo "OPENWEATHER_API_KEY=${{ secrets.OPENWEATHER_API_KEY }}" >> .env
-          echo "LAT=${{ secrets.LAT }}" >> .env
-          echo "LON=${{ secrets.LON }}" >> .env
-          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
-          echo "ELEVENLABS_API_KEY=${{ secrets.ELEVENLABS_API_KEY }}" >> .env
-          echo "VOICE_ID=${{ secrets.VOICE_ID }}" >> .env
+    - name: Kjør velkomst.js
+      run: node velkomst.js
+      env:
+        OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+        LAT: ${{ secrets.LAT }}
+        LON: ${{ secrets.LON }}
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+        VOICE_ID: ${{ secrets.VOICE_ID }}
 
-      - name: Køyr velkomstmelding
-        run: node velkomst.js
-
-      - name: Last opp lydfil som artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: velkomstmelding
-          path: velkomst.mp3
+    - name: Last opp mp3 som artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: velkomst-melding
+        path: velkomst.mp3
