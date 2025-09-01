@@ -26,8 +26,8 @@ jobs:
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
           VOICE_ID: ${{ secrets.VOICE_ID }}
-          LAT: ${{ secrets.LAT }}
-          LON: ${{ secrets.LON }}
+          LAT: "61.3970"   # Skilbrei (breddegrad)
+          LON: "5.8780"   # Skilbrei (lengdegrad)
 
       - name: Commit og push mp3
         run: |
@@ -36,5 +36,3 @@ jobs:
           git add velkomst.mp3
           git commit -m "Oppdatert velkomst-melding" || echo "Ingen endringer å committe"
           git push
-
-
