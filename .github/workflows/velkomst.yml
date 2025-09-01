@@ -1,11 +1,12 @@
-name: Generer velkomst-lyd
+name: Velkomst
 
 on:
-  workflow_dispatch: # Kun manuelt
+  workflow_dispatch:   # 🚀 Kjør manuelt frå GitHub
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Sjekk ut kode
         uses: actions/checkout@v3
@@ -13,25 +14,23 @@ jobs:
       - name: Sett opp Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "20"
+          node-version: 20
 
       - name: Installer avhengigheter
         run: npm install node-fetch dotenv
 
-      - name: Kjør velkomst.js
+      - name: Kjør velkomst
+        run: node velkomst.js
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+          LAT: ${{ secrets.LAT }}
+          LON: ${{ secrets.LON }}
           VOICE_ID: ${{ secrets.VOICE_ID }}
-          SKILBREI_LAT: ${{ secrets.SKILBREI_LAT }}
-          SKILBREI_LON: ${{ secrets.SKILBREI_LON }}
-        run: node velkomst.js
 
-      - name: Commit og push mp3
-        run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-          git add velkommen.mp3
-          git commit -m "Oppdatert velkommen.mp3"
-          git push
+      - name: Last opp lydfil som artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: velkomst-lyd
+          path: velkomst.mp3
