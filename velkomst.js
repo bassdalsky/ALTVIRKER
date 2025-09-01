@@ -6,23 +6,35 @@ const WEATHER_KEY = process.env.OPENWEATHER_API_KEY;
 const ELEVEN_KEY = process.env.ELEVENLABS_API_KEY;
 const VOICE_ID = process.env.VOICE_ID;
 
-// Hent værdata
 async function getWeather() {
-  const url = `https://api.openweathermap.org/data/2.5/weather?lat=61.45&lon=5.85&appid=${WEATHER_KEY}&units=metric&lang=no`;
+  const url = `https://api.openweathermap.org/data/2.5/weather?lat=61.45&lon=5.85&units=metric&appid=${WEATHER_KEY}&lang=no`;
   const res = await fetch(url);
   const data = await res.json();
-  return `${data.weather[0].description}, ${Math.round(data.main.temp)}°C`;
+  return `${data.weather[0].description} ${Math.round(data.main.temp)}°C`;
 }
 
-// Lag velkomsttekst
-async function makeText() {
-  const weather = await getWeather();
-  return `Hei, velkommen hjem! Akkurat nå er det ${weather}.`;
+async function generateText(weather) {
+  const prompt = `Lag en kort og hyggelig velkomstmelding på norsk. 
+  Ta med været: ${weather}. 
+  Bruk en vennlig tone.`;
+  
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${OPENAI_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }]
+    })
+  });
+  const data = await res.json();
+  return data.choices[0].message.content;
 }
 
-// Generer tale med ElevenLabs v3 Alpha
 async function generateTTS(text) {
-  const url = `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}/stream?model_id=eleven_multilingual_v3`;
+  const url = `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`;
   const res = await fetch(url, {
     method: "POST",
     headers: {
@@ -31,18 +43,21 @@ async function generateTTS(text) {
     },
     body: JSON.stringify({
       text,
-      model_id: "eleven_multilingual_v3",
-      voice_settings: { stability: 0.6, similarity_boost: 0.8 }
+      model_id: "eleven_multilingual_v3_alpha",   // ✅ riktig modell
+      voice_settings: { stability: 0.5, similarity_boost: 0.7 }
     })
   });
 
   const buffer = Buffer.from(await res.arrayBuffer());
   fs.writeFileSync("velkomst.mp3", buffer);
-  console.log("✅ velkomst.mp3 generert!");
+  console.log("✅ Lagret velkomst.mp3");
 }
 
-const main = async () => {
-  const text = await makeText();
+async function main() {
+  const weather = await getWeather();
+  const text = await generateText(weather);
+  console.log("📢 Generert tekst:", text);
   await generateTTS(text);
-};
+}
+
 main();
