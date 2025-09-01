@@ -1,14 +1,13 @@
-name: Generer velkomstmelding
+name: Generer velkomst-lyd
 
 on:
-  workflow_dispatch:   # køyrer KUN manuelt
+  workflow_dispatch: # Kun manuelt
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Sjekk ut repo
+      - name: Sjekk ut kode
         uses: actions/checkout@v3
 
       - name: Sett opp Node.js
@@ -16,11 +15,10 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Installer avhengigheiter
+      - name: Installer avhengigheter
         run: npm install node-fetch dotenv
 
-      - name: Kjør velkomst
-        run: node velkomst.js
+      - name: Kjør velkomst.js
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
@@ -28,12 +26,12 @@ jobs:
           VOICE_ID: ${{ secrets.VOICE_ID }}
           SKILBREI_LAT: ${{ secrets.SKILBREI_LAT }}
           SKILBREI_LON: ${{ secrets.SKILBREI_LON }}
+        run: node velkomst.js
 
-      - name: Commit og push MP3
+      - name: Commit og push mp3
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
           git add velkommen.mp3
-          git commit -m "Oppdatert velkomstmelding"
+          git commit -m "Oppdatert velkommen.mp3"
           git push
-
