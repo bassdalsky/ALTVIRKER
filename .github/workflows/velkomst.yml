@@ -1,22 +1,40 @@
 name: Velkomst
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
+  workflow_dispatch: {}
+
+permissions:
+  pages: write
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 18
-      - run: npm install node-fetch@3 dotenv
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: node-version: 20
+      - run: npm install
       - run: node velkomst.js
         env:
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
           LAT: ${{ secrets.LAT }}
           LON: ${{ secrets.LON }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
-          VOICE_ID: ${{ secrets.VOICE_ID }}
+          ELEVEN_API_KEY: ${{ secrets.ELEVEN_API_KEY }}
+          ELEVEN_VOICE_ID: ${{ secrets.ELEVEN_VOICE_ID }}
+          ELEVEN_MODEL_ID: ${{ secrets.ELEVEN_MODEL_ID }}
+      - run: |
+          mkdir -p public
+          cp velkomst.mp3 public/velkomst.mp3
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public/
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/deploy-pages@v4
+        with: token: ${{ secrets.GITHUB_TOKEN }}
