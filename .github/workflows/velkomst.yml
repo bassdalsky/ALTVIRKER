@@ -16,7 +16,7 @@ jobs:
           node-version: 18
 
       - name: Installer avhengigheter
-        run: npm install node-fetch@3
+        run: npm install node-fetch@2
 
       - name: Generer velkomst-mp3
         env:
@@ -26,8 +26,8 @@ jobs:
           VOICE_ID: ${{ secrets.VOICE_ID }}
         run: |
           node <<'EOF'
-          import fetch from "node-fetch";
-          import fs from "fs";
+          const fetch = require("node-fetch");
+          const fs = require("fs");
 
           const apiKey = process.env.OPENAI_API_KEY;
           const weatherKey = process.env.OPENWEATHER_API_KEY;
@@ -65,8 +65,10 @@ jobs:
             console.log("✅ velkomst.mp3 generert!");
           }
 
-          const msg = await getMessage();
-          await generateTTS(msg);
+          (async () => {
+            const msg = await getMessage();
+            await generateTTS(msg);
+          })();
           EOF
 
       - name: Commit og push mp3
