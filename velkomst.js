@@ -1,4 +1,3 @@
-// velkomst.js
 import fs from "fs";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
@@ -10,39 +9,47 @@ const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 const VOICE_ID = process.env.VOICE_ID;
 
-// Koordinater for Skilbrei
-const LAT = 61.3931;
-const LON = 5.7815;
-
-async function hentVaer() {
-  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${LAT}&lon=${LON}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=no`;
+// Hent værdata
+async function getWeather() {
+  const lat = process.env.LAT || "61.3977";   // Skilbrei
+  const lon = process.env.LON || "5.7894";
+  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&lang=no&appid=${OPENWEATHER_API_KEY}`;
   const res = await fetch(url);
-  if (!res.ok) throw new Error("Klarte ikke hente værdata");
   const data = await res.json();
-  return `I dag er det ${Math.round(data.main.temp)} grader og ${data.weather[0].description}.`;
+  return `Det er ${Math.round(data.main.temp)} grader og ${data.weather[0].description} i dag.`;
 }
 
-async function genererTekst() {
-  const dato = new Date().toLocaleDateString("no-NO", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
+// Generer velkomsttekst med OpenAI
+async function generateText(weather) {
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: "Du lager en kort og hyggelig velkomstmelding på norsk, med litt humor.",
+        },
+        {
+          role: "user",
+          content: `Lag en velkomstmelding. Inkluder dagens værmelding: ${weather}`,
+        },
+      ],
+    }),
   });
 
-  const vaer = await hentVaer();
-
-  const hilsninger = [
-    `God morgen! I dag er det ${dato}. ${vaer}`,
-    `Hei hei! Velkommen til en ny dag, ${dato}. ${vaer}`,
-    `Ny dag, nye muligheter! I dag er det ${dato}. ${vaer}`,
-  ];
-
-  const melding = hilsninger[Math.floor(Math.random() * hilsninger.length)];
-  return melding + " Ha en fin dag videre!";
+  const data = await res.json();
+  return data.choices[0].message.content;
 }
 
-async function lagLyd(tekst) {
-  const url = `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}/stream`;
+// Konverter til tale med ElevenLabs
+async function textToSpeech(text) {
+  const url = `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}/stream?model_id=eleven_multilingual_v3_alpha`;
+
   const res = await fetch(url, {
     method: "POST",
     headers: {
@@ -50,22 +57,5 @@ async function lagLyd(tekst) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      text: tekst,
-      model_id: "eleven_multilingual_v3_alpha",
-      voice_settings: { stability: 0.5, similarity_boost: 0.8 },
-    }),
-  });
-
-  if (!res.ok) throw new Error(`Feil fra ElevenLabs: ${res.statusText}`);
-
-  const buffer = Buffer.from(await res.arrayBuffer());
-  fs.writeFileSync("velkomst.mp3", buffer);
-  console.log("✅ Ny velkomstmelding generert: velkomst.mp3");
-}
-
-(async () => {
-  try {
-    const tekst = await genererTekst();
-    console.log("Generert tekst:", tekst);
-    await lagLyd(tekst);
-  } catch (err)
+      text,
+      voice_settings: {
