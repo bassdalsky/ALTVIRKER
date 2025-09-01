@@ -1,39 +1,39 @@
-name: Bygg Velkomst MP3
+name: Velkomst
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+  workflow_dispatch: # 👉 Dette gjør at du får "Run workflow"-knappen i GitHub Actions
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Sjekk ut repo
+        uses: actions/checkout@v4
 
-      - name: Sett opp Node
-        uses: actions/setup-node@v3
+      - name: Sett opp Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20'
 
       - name: Installer avhengigheter
         run: npm install
 
-      - name: Lag MP3
-        run: node velkomst.js
+      - name: Kjør velkomst
         env:
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
           LAT: ${{ secrets.LAT }}
           LON: ${{ secrets.LON }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
           VOICE_ID: ${{ secrets.VOICE_ID }}
+        run: node velkomst.js
 
-      - name: Deploy til GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Last opp MP3 som artifact
+        uses: actions/upload-artifact@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./
-          publish_branch: gh-pages
-          force_orphan: true
-          enable_jekyll: false
-          keep_files: false
+          name: velkomst-lyd
+          path: output.mp3
