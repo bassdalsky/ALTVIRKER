@@ -1,13 +1,14 @@
-name: Bygg velkomstmelding
+name: Bygg og køyr velkomstmelding
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 6 * * *" # køyres kvar dag kl 06:00
+    - cron: "0 6 * * *" # køyr kvar dag kl 06:00 norsk tid (UTC +2 om sommaren)
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Sjekk ut kode
         uses: actions/checkout@v4
@@ -17,15 +18,23 @@ jobs:
         with:
           node-version: 20
 
-      - name: Installer avhengigheter
+      - name: Installer avhengigheiter
         run: npm install
 
-      - name: Kjør velkomst
+      - name: Lag .env-fil frå secrets
+        run: |
+          echo "OPENWEATHER_API_KEY=${{ secrets.OPENWEATHER_API_KEY }}" >> .env
+          echo "LAT=${{ secrets.LAT }}" >> .env
+          echo "LON=${{ secrets.LON }}" >> .env
+          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
+          echo "ELEVENLABS_API_KEY=${{ secrets.ELEVENLABS_API_KEY }}" >> .env
+          echo "VOICE_ID=${{ secrets.VOICE_ID }}" >> .env
+
+      - name: Køyr velkomstmelding
         run: node velkomst.js
 
-      - name: Last opp MP3 som artifact
+      - name: Last opp lydfil som artifact
         uses: actions/upload-artifact@v4
         with:
-          name: velkomst-melding
+          name: velkomstmelding
           path: velkomst.mp3
-          if-no-files-found: error
