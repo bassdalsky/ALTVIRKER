@@ -8,6 +8,7 @@ dotenv.config();
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
+const VOICE_ID = process.env.VOICE_ID;
 
 // Koordinater for Skilbrei
 const LAT = 61.3931;
@@ -41,7 +42,7 @@ async function genererTekst() {
 }
 
 async function lagLyd(tekst) {
-  const url = "https://api.elevenlabs.io/v1/text-to-speech/eleven_multilingual_v3_alpha/stream";
+  const url = `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}/stream`;
   const res = await fetch(url, {
     method: "POST",
     headers: {
@@ -67,8 +68,4 @@ async function lagLyd(tekst) {
     const tekst = await genererTekst();
     console.log("Generert tekst:", tekst);
     await lagLyd(tekst);
-  } catch (err) {
-    console.error("[FEIL]", err.message);
-    process.exit(1);
-  }
-})();
+  } catch (err)
