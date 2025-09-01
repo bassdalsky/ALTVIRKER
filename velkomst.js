@@ -1,88 +1,135 @@
 import axios from "axios";
 import fs from "fs";
 import dotenv from "dotenv";
+
 dotenv.config();
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
-const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
-const VOICE_ID = process.env.VOICE_ID;
-const LAT = process.env.LAT;
-const LON = process.env.LON;
-
-// Ukedager på norsk
-const days = ["Søndag","Mandag","Tirsdag","Onsdag","Torsdag","Fredag","Laurdag"];
-const today = new Date();
-const weekday = days[today.getDay()];
-
-// Klokkeslett
-const timeNow = today.toLocaleTimeString("no-NO", { hour: "2-digit", minute: "2-digit" });
-
-// Velkomsthilsner (variasjon)
-const greetings = [
-  "Velkommen heim, eg skrur på alt lys til deg.",
-  "Hei der! Kjekt å sjå deg igjen, no blir det lyst og triveleg her.",
-  "Velkomen tilbake! Eg har tent lysa for deg.",
-  "Hei, huset har sakna deg – lysa er alt skrudd på."
+// --- Sjekk at alle nødvendige miljøvariabler er satt ---
+const requiredEnv = [
+  "OPENAI_API_KEY",
+  "OPENWEATHER_API_KEY",
+  "ELEVENLABS_API_KEY",
+  "VOICE_ID",
+  "LAT",
+  "LON"
 ];
-const greeting = greetings[Math.floor(Math.random() * greetings.length)];
-
-// Hent værdata
-const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${LAT}&lon=${LON}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=no`;
-const weatherRes = await axios.get(weatherUrl);
-const { main, weather } = weatherRes.data;
-
-// Få ein humoristisk anbefaling frå OpenAI
-const openaiRes = await axios.post(
-  "https://api.openai.com/v1/chat/completions",
-  {
-    model: "gpt-4o-mini",
-    messages: [
-      { role: "system", content: "Du er ein morsom norsk assistent som skriv korte, humoristiske daglege råd på nynorsk. Ver alltid litt leikande, små-ironisk eller rampete, men hald deg til maks 1 setning." },
-      { role: "user", content: "Lag eit humoristisk råd for dagen." }
-    ]
-  },
-  {
-    headers: {
-      "Authorization": `Bearer ${OPENAI_API_KEY}`,
-      "Content-Type": "application/json"
-    }
-  }
-);
-
-const advice = openaiRes.data.choices[0].message.content;
-
-// Boss-påminning
-let reminder = "";
-if (weekday === "Mandag") {
-  reminder = "Hugs papirbosset.";
-} else if (weekday === "Onsdag") {
-  reminder = "Hugs det er bossdag på Sande frå klokka 12 til 18.";
-} else if (weekday === "Torsdag") {
-  reminder = "Hugs boss spannet.";
+const missing = requiredEnv.filter((key) => !process.env[key]);
+if (missing.length > 0) {
+  console.error("[FEIL] Manglar desse variablane i .env:", missing.join(", "));
+  process.exit(1);
 }
 
-// Bygg velkomsttekst
-const text = `Hei! I dag er det ${weekday}. ${greeting} 
-Klokka er ${timeNow}. Temperaturen ute er ${main.temp} grader og været er ${weather[0].description}. 
-Temperaturen inne er 22 grader. ${advice} ${reminder}`;
+// --- Hjelpefunksjonar ---
+const getDayName = () => {
+  return new Date().toLocaleDateString("no-NO", { weekday: "long" });
+};
 
-// Lag lyd via ElevenLabs
-const ttsRes = await axios.post(
-  `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`,
-  {
-    text,
-    model_id: "eleven_v3",
-    voice_settings: { stability: 0.7, similarity_boost: 0.7 }
-  },
-  {
-    headers: {
-      "xi-api-key": ELEVENLABS_API_KEY,
-      "Content-Type": "application/json"
-    },
-    responseType: "arraybuffer"
+const getTimeNow = () => {
+  return new Date().toLocaleTimeString("no-NO", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+async function getWeather() {
+  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${process.env.LAT}&lon=${process.env.LON}&units=metric&lang=no&appid=${process.env.OPENWEATHER_API_KEY}`;
+  const response = await axios.get(url);
+  return {
+    temp: Math.round(response.data.main.temp),
+    desc: response.data.weather[0].description,
+  };
+}
+
+function getBossReminder(day) {
+  switch (day.toLowerCase()) {
+    case "mandag":
+      return "Hugs papirbosset i dag.";
+    case "onsdag":
+      return "Hugs det er bossdag på Sande frå kl 12.00 til 18.00.";
+    case "torsdag":
+      return "Hugs å sette ut bosspannet.";
+    default:
+      return "";
   }
-);
+}
 
-fs.writeFileSync("velkomst.mp3", ttsRes.data);
-console.log("[OK] velkomst.mp3 generert!");
+async function getFunnyAdvice() {
+  const prompt = `Lag ein kort, humoristisk norsk melding som passar som avslutning på ein velkomsthelsing. 
+Døme: "I dag kan det vere fint å ta seg ein kopp kaffi." 
+Meldinga skal vere maks 1 setning, og alltid med ein liten humor-vri.`;
+
+  try {
+    const response = await axios.post(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 50,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    return response.data.choices[0].message.content.trim();
+  } catch (error) {
+    console.error("Feil ved henting av humoristisk melding:", error.message);
+    return "I dag er ein perfekt dag å late som du har kontroll på alt.";
+  }
+}
+
+async function generateWelcome() {
+  const day = getDayName();
+  const time = getTimeNow();
+  const weather = await getWeather();
+  const bossReminder = getBossReminder(day);
+  const funny = await getFunnyAdvice();
+
+  const greetings = [
+    "Velkommen heim!",
+    "Hei, godt å sjå deg igjen!",
+    "Der er du, velkommen tilbake!",
+    "Hyggelig at du er heime igjen!",
+  ];
+  const greeting = greetings[Math.floor(Math.random() * greetings.length)];
+
+  let text = `${greeting} I dag er det ${day}, klokka er ${time}. `;
+  text += `Ute er det ${weather.temp} grader og ${weather.desc}. `;
+  text += `Inne er det 22 grader. `;
+  if (bossReminder) text += bossReminder + " ";
+  text += funny;
+
+  return text;
+}
+
+async function textToSpeech(text) {
+  const url = `https://api.elevenlabs.io/v1/text-to-speech/${process.env.VOICE_ID}`;
+  const response = await axios.post(
+    url,
+    {
+      text: text,
+      model_id: "eleven_multilingual_v2",
+      voice_settings: { stability: 0.4, similarity_boost: 0.8 },
+    },
+    {
+      headers: {
+        "xi-api-key": process.env.ELEVENLABS_API_KEY,
+        "Content-Type": "application/json",
+      },
+      responseType: "arraybuffer",
+    }
+  );
+  fs.writeFileSync("velkomst.mp3", response.data);
+  console.log("✅ Genererte velkomst.mp3");
+}
+
+// --- Start ---
+generateWelcome()
+  .then(async (text) => {
+    console.log("Velkomstmelding:", text);
+    await textToSpeech(text);
+  })
+  .catch((err) => console.error("FEIL:", err));
