@@ -9,13 +9,7 @@ async function getWeather() {
   const res = await fetch(WEATHER_URL);
   if (!res.ok) throw new Error(`Feil frå OpenWeather (${res.status})`);
   const data = await res.json();
-  return `Det er ${data.weather[0].description} og ${Math.round(data.main.temp)} grader i dag.`;
-}
-
-async function makeText() {
-  const dato = new Date().toLocaleDateString("no-NO", { weekday: "long", day: "numeric", month: "long" });
-  const vær = await getWeather();
-  return `God dag! I dag er det ${dato}. ${vær} Boss blir tømt i morgon. Ha ein fin dag!`;
+  return `Været i dag er ${data.weather[0].description} med temperatur på ${Math.round(data.main.temp)} grader.`;
 }
 
 async function makeMp3(text) {
@@ -23,25 +17,25 @@ async function makeMp3(text) {
     method: "POST",
     headers: {
       "xi-api-key": process.env.ELEVENLABS_API_KEY,
-      "Content-Type": "application/json",
+      "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      model_id: "eleven_multilingual_v3_alpha",
       text,
+      model_id: "eleven_multilingual_v3_alpha",
       voice_settings: { stability: 0.5, similarity_boost: 0.8 }
-    }),
+    })
   });
-
   if (!res.ok) throw new Error(`Feil frå ElevenLabs (${res.status})`);
   const buffer = Buffer.from(await res.arrayBuffer());
-  fs.writeFileSync("velkomst.mp3", buffer);
-  console.log("✅ MP3 generert: velkomst.mp3");
+  fs.writeFileSync("velkommen.mp3", buffer);
+  console.log("✅ Lydfil lagra: velkommen.mp3");
 }
 
 async function main() {
   try {
-    const text = await makeText();
-    await makeMp3(text);
+    const weather = await getWeather();
+    const melding = `Hei og velkommen heim. ${weather} Hugs å ta ut bosset i kveld.`;
+    await makeMp3(melding);
   } catch (err) {
     console.error("❌ Feil:", err);
     process.exit(1);
