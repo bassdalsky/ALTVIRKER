@@ -26,13 +26,13 @@ jobs:
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
           VOICE_ID: ${{ secrets.VOICE_ID }}
-          LAT: "61.3970"   # Skilbrei (breddegrad)
-          LON: "5.8780"   # Skilbrei (lengdegrad)
+          LAT: ${{ secrets.LAT }}
+          LON: ${{ secrets.LON }}
 
-      - name: Commit og push mp3
+      - name: Commit og push oppdatert mp3
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add velkomst.mp3
-          git commit -m "Oppdatert velkomst-melding" || echo "Ingen endringer å committe"
+          git commit -m "Oppdatert velkomst.mp3" || echo "Ingen endringer å committe"
           git push
