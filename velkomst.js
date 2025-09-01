@@ -58,4 +58,19 @@ async function generateSpeech(text) {
 
   const arrayBuffer = await res.arrayBuffer();
   fs.writeFileSync("velkomst.mp3", Buffer.from(arrayBuffer));
-  console.
+  console.log("✅ MP3 generert: velkomst.mp3");
+}
+
+async function main() {
+  try {
+    const weather = await getWeather();
+    const melding = lagMelding(weather);
+    console.log("📢 Velkomstmelding:", melding);
+    await generateSpeech(melding);
+  } catch (err) {
+    console.error("❌ Feil:", err);
+    process.exit(1);
+  }
+}
+
+main();
