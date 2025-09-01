@@ -33,6 +33,9 @@ async function lagMelding() {
 async function lagTale(text) {
   const voiceId = process.env.VOICE_ID;
   const apiKey = process.env.ELEVENLABS_API_KEY;
+  const model = "eleven_multilingual_v3_alpha";
+
+  console.log(`🗣️ Brukar stemme (VOICE_ID): ${voiceId}, modell: ${model}`);
 
   const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
     method: "POST",
@@ -46,7 +49,7 @@ async function lagTale(text) {
         stability: 0.5,
         similarity_boost: 0.8
       },
-      model_id: "eleven_multilingual_v3_alpha" // 🚀 alltid alpha v3
+      model_id: model
     })
   });
 
