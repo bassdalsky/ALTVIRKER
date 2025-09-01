@@ -2,8 +2,11 @@
   "name": "velkomst",
   "version": "1.0.0",
   "type": "module",
-  "main": "velkomst.js",
+  "scripts": {
+    "start": "node velkomst.js"
+  },
   "dependencies": {
-    "node-fetch": "^3.3.2"
+    "axios": "^1.6.8",
+    "dotenv": "^16.4.5"
   }
 }
