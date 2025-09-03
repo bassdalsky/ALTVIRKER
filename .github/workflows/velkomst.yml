@@ -1,13 +1,17 @@
-name: Velkomst
+name: velkomst
 
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch: {}
+  schedule:
+    - cron: "1 22 * * *" # 00:01 i Oslo når CEST (UTC+2)
+    - cron: "1 23 * * *" # 00:01 i Oslo når CET  (UTC+1)
+  workflow_dispatch:
+    inputs:
+      test_message:
+        description: 'Valfritt: skriv ei test-melding (støttar {KLOKKA} og {VÆR}) for å lage test.mp3'
+        required: false
+        type: string
 
 permissions:
-  pages: write
   contents: write
 
 jobs:
@@ -16,25 +20,35 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: node-version: 20
-      - run: npm install
-      - run: node velkomst.js
+        with:
+          node-version: 20
+      - name: Kjør skript (prod eller test)
+        run: node velkomst.js "${{ inputs.test_message }}"
         env:
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
-          LAT: ${{ secrets.LAT }}
-          LON: ${{ secrets.LON }}
-          ELEVEN_API_KEY: ${{ secrets.ELEVEN_API_KEY }}
-          ELEVEN_VOICE_ID: ${{ secrets.ELEVEN_VOICE_ID }}
-          ELEVEN_MODEL_ID: ${{ secrets.ELEVEN_MODEL_ID }}
-      - run: |
-          mkdir -p public
-          cp velkomst.mp3 public/velkomst.mp3
-      - uses: actions/upload-pages-artifact@v3
+          SKILBREI_LAT: ${{ secrets.SKILBREI_LAT }}
+          SKILBREI_LON: ${{ secrets.SKILBREI_LON }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
+          ELEVENLABS_MODEL_ID: ${{ secrets.ELEVENLABS_MODEL_ID }} # f.eks. eleven_multilingual_v3
+          LOCATION_NAME: ${{ secrets.LOCATION_NAME }}               # f.eks. Skilbrei (valfritt)
+          READABLE_TIME_STYLE: ${{ secrets.READABLE_TIME_STYLE }}   # colon | space | og (valfritt)
+          TEST_MESSAGE: ${{ inputs.test_message }}
+      - name: Commit velkomst.mp3 (berre når prod)
+        if: ${{ inputs.test_message == '' }}
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          path: public/
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/deploy-pages@v4
-        with: token: ${{ secrets.GITHUB_TOKEN }}
+          commit_message: "chore: oppdatert velkomst.mp3"
+          file_pattern: velkomst.mp3
+      - name: Last opp artifact (velkomst.mp3)
+        if: ${{ inputs.test_message == '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: velkomst-mp3
+          path: velkomst.mp3
+      - name: Last opp artifact (test.mp3)
+        if: ${{ inputs.test_message != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-mp3
+          path: test.mp3
