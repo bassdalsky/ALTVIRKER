@@ -1,0 +1,34 @@
+# Mandag
+Velkommen inn i varmen! Eg slår på litt lys og systema. Klokka er {KLOKKA}, og {VÆR}. Hugs å setje ut bossdunken – elles kjem naboen til å minne deg på det med lange blikk. Ha ein god start på veka!
+Hjertelig velkommen! Eg slår på litt lys og gjer det koseleg. {VÆR}. Klokka er {KLOKKA}. I dag er det måndag, så hugs bosset. Etterpå fortener du å leggje beina på bordet og ta ein kaffe.
+Heisann og hoppsann! Eg slår på litt lys og gjer det triveleg. Klokka er {KLOKKA}, og {VÆR}. Måndag betyr boss, men hugs: du kastar søppel – ikkje humøret ditt. Ha ein fin kveld!
+
+# Tysdag
+Så kjekt å sjå deg igjen! Eg slår på litt lys og systema. Klokka er {KLOKKA}, og {VÆR}. Tysdag er kanskje litt grå, men hugs – no er du berre fire dagar frå helg.
+Velkommen heim! Eg slår på litt lys og gjer det koseleg. {VÆR}. Klokka er {KLOKKA}. Tysdag er som ein pauseknapp midt mellom måndag og onsdag – bruk han til noko du likar.
+Så hyggeleg at du kom inn her! Eg slår på litt lys og gjer det triveleg. Klokka er {KLOKKA}, og {VÆR}. Tysdag er dagen då lite skjer, men det betyr at du har fri til å gjere akkurat det du vil. Kos deg!
+
+# Onsdag
+Hjertelig velkommen! Eg slår på litt lys og systema. Klokka er {KLOKKA}, og {VÆR}. Det er onsdag – hugs at det er ope på bossplassen på Sande frå 12:00–18:00. Etterpå kan du ta turen ned med bosset. Ha ein god dag!
+Så kjekt å sjå deg! Eg slår på litt lys og gjer det koseleg. Klokka er {KLOKKA}. Hugs at det er ope på bossplassen på Sande frå 12:00–18:00. {VÆR}. Onsdag er midt i veka, så du har lov å belønne deg sjølv med litt ekstra kos.
+Hjertelig velkommen! Eg slår på litt lys og gjer det triveleg. {VÆR}. Klokka er {KLOKKA}, og det er onsdag. Hugs bosset! Om du ikkje gjer det, får du kanskje ein ny hobby: boss-samling.
+
+# Torsdag
+Hei! Velkommen inn i varmen! Eg slår på litt lys og systema. Klokka er {KLOKKA}, og {VÆR}. I dag er det torsdag – hugs bosset, og gled deg til fredagen som kjem straks.
+Så kjekt å sjå deg igjen! Eg slår på litt lys og gjer det koseleg. Klokka er {KLOKKA}, og {VÆR}. Torsdag betyr boss, men også at helga står og bankar på døra.
+Velkommen heim til den avanserte heimen din! Eg slår på litt lys og gjer det triveleg. {VÆR}. Klokka er {KLOKKA}. Torsdag er kanskje ein boss-dag, men trøysta er at du berre er eitt steg unna helg og taco.
+
+# Fredag
+God helg! Eg slår på litt lys og systema. Klokka er {KLOKKA}, og {VÆR}. Fredagen er her – ta av deg skoa, sett på noko musikk og lat som om oppvasken ikkje finst.
+Så kjekt å sjå deg heim att! Eg slår på litt lys og gjer det koseleg. {VÆR}. Klokka er {KLOKKA}. Fredag betyr helg, og helg betyr kos – kanskje ein film, kanskje ein pizza, kanskje begge delar.
+Velkommen inn til den smarte heimen din! Eg slår på litt lys og gjer det triveleg. Klokka er {KLOKKA}, og {VÆR}. Fredag gjer alle litt gladare – bortsett frå støvsugaren, som veit at han ikkje får jobbe i dag.
+
+# Laurdag
+Velkommen inn i varmen! Eg slår på litt lys og systema. Klokka er {KLOKKA}, og {VÆR}. Laurdag betyr fritid – tid for å gjere akkurat det DU har lyst til. Kanskje ein tur ut, eller berre sofakos med noko godt i skåla.
+Så kjekt å sjå deg igjen! Eg slår på litt lys og gjer det koseleg. {VÆR}. Klokka er {KLOKKA}. Laurdag er dagen for å kose seg ekstra mykje – sett på ein film, inviter nokon på besøk, eller berre nyt stillheita.
+Hjertelig velkommen! Eg slår på litt lys og gjer det triveleg. Klokka er {KLOKKA}. {VÆR}. Laurdag er fridagen over alle – perfekt for god mat, litt latter, og kanskje eit lite eventyr. Kos deg maks!
+
+# Søndag
+Hjertelig velkommen! Eg slår på litt lys og systema. Klokka er {KLOKKA}, og {VÆR}. Hugs papirbosset – elles kjem naboen til å minne deg på det med lange blikk. Ha ein riktig fin søndag!
+Heisann, velkommen inn! Eg slår på litt lys og gjer det koseleg. Klokka er {KLOKKA}. {VÆR}. Søndag er dagen då alt går litt sakte – akkurat slik det skal vere. Kos deg! Hugs papirbosset, og ha ein super søndag!
+Så kjekt å sjå deg! Eg slår på litt lys og gjer det triveleg. {VÆR}. Klokka er {KLOKKA}. Søndag betyr ro, men hugs papirbosset – og i morgon er det måndag igjen. Nyt dagen dobbelt så mykje!
