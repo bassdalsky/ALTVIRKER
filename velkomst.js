@@ -1,6 +1,6 @@
-// velkomst.js – PERFEKT versjon (GitHub Actions-first)
-// Node 20 (CommonJS) – ingen PowerShell nødvendig.
-// Støtter {KLOKKA} og {VÆR}/{VAER}, pen klokke for TTS, OpenWeather, ElevenLabs (modell via secret), fallback til v2.
+// velkomst.js – NORSK ONLY (alltid v2) 🇳🇴
+// Låst til eleven_multilingual_v2 for rein norsk uttale.
+// Ignorerer ELEVENLABS_MODEL_ID. Støtter LANGUAGE_PRIMER og READABLE_TIME_STYLE.
 
 const fs = require("fs");
 
@@ -9,12 +9,12 @@ const LAT = process.env.SKILBREI_LAT;
 const LON = process.env.SKILBREI_LON;
 const ELEVEN_API = process.env.ELEVENLABS_API_KEY;
 const VOICE_ID = process.env.ELEVENLABS_VOICE_ID;
-const ELEVEN_MODEL_PREF = process.env.ELEVENLABS_MODEL_ID || "eleven_multilingual_v3";
-
 const LOCATION_NAME = process.env.LOCATION_NAME || "";
 const DUMMY_WEATHER = process.env.DUMMY_WEATHER || "";
-const READABLE_TIME_STYLE = process.env.READABLE_TIME_STYLE || "colon"; // colon | space | og
+const READABLE_TIME_STYLE = process.env.READABLE_TIME_STYLE || "space"; // colon | space | og
+const PRIMER = process.env.LANGUAGE_PRIMER || ""; // t.d. "Hei!"
 
+// Sjekk secrets
 (function sanity() {
   const needed = ["OPENWEATHER_API_KEY","SKILBREI_LAT","SKILBREI_LON","ELEVENLABS_API_KEY","ELEVENLABS_VOICE_ID"];
   const missing = needed.filter(k => !process.env[k]);
@@ -37,7 +37,7 @@ function formatTimeForTTS(hhmm, style = READABLE_TIME_STYLE) {
   const [HH, MM] = hhmm.split(":");
   if (style === "space") return `${Number(HH)} ${Number(MM)}`;
   if (style === "og")    return `${Number(HH)} og ${Number(MM)}`;
-  return hhmm; // colon
+  return hhmm;
 }
 
 async function getWeatherText() {
@@ -93,32 +93,20 @@ function applyPlaceholders(text, time, weatherText) {
   return out;
 }
 
-async function callEleven(text, modelId) {
+async function callEleven(text) {
   const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`, {
     method: "POST",
     headers: { "xi-api-key": ELEVEN_API, "Content-Type": "application/json", "Accept": "audio/mpeg" },
-    body: JSON.stringify({ model_id: modelId, text, voice_settings: { stability: 0.5, similarity_boost: 0.8 } })
+    body: JSON.stringify({ model_id: "eleven_multilingual_v2", text, voice_settings: { stability: 0.5, similarity_boost: 0.8 } })
   });
-  if (!res.ok) { throw new Error(await res.text()); }
+  if (!res.ok) throw new Error(await res.text());
   return Buffer.from(await res.arrayBuffer());
 }
 
 async function makeMp3(text, outfile) {
-  const preferred = ELEVEN_MODEL_PREF;
-  try {
-    const buf = await callEleven(text, preferred);
-    fs.writeFileSync(outfile, buf);
-  } catch (e) {
-    const msg = String(e);
-    if (msg.includes("model") && preferred !== "eleven_multilingual_v2") {
-      console.warn("⚠️  Modell", preferred, "finnes ikkje. Prøver eleven_multilingual_v2 …");
-      const buf2 = await callEleven(text, "eleven_multilingual_v2");
-      fs.writeFileSync(outfile, buf2);
-    } else {
-      throw e;
-    }
-  }
-  console.log(`✅ Generert ${outfile}`);
+  const buf = await callEleven(text);
+  fs.writeFileSync(outfile, buf);
+  console.log(`✅ Generert ${outfile} (modell: eleven_multilingual_v2)`);
 }
 
 (async () => {
@@ -128,16 +116,18 @@ async function makeMp3(text, outfile) {
     const { weekday, time } = getNow();
     const weatherText = await getWeatherText();
 
+    const injectPrimer = (s) => (PRIMER ? (PRIMER + " " + s) : s);
+
     if (testMessage || argText) {
       const raw = testMessage || argText;
-      const finalText = applyPlaceholders(raw, time, weatherText);
+      const finalText = injectPrimer(applyPlaceholders(raw, time, weatherText));
       console.log("[TEST] Tekst til tale:", finalText);
       await makeMp3(finalText, "test.mp3");
       return;
     }
 
     const baseMessage = pickMessageForDay(weekday);
-    const fullText = applyPlaceholders(baseMessage, time, weatherText);
+    const fullText = injectPrimer(applyPlaceholders(baseMessage, time, weatherText));
     console.log("[PROD] Tekst til tale:", fullText);
     await makeMp3(fullText, "velkomst.mp3");
   } catch (err) {
