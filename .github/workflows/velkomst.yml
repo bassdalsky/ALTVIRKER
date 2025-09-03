@@ -2,53 +2,43 @@ name: velkomst
 
 on:
   schedule:
-    - cron: "1 22 * * *" # 00:01 i Oslo når CEST (UTC+2)
-    - cron: "1 23 * * *" # 00:01 i Oslo når CET  (UTC+1)
+    - cron: "1 0 * * *"  # hver dag 00:01 (Europe/Oslo)
   workflow_dispatch:
-    inputs:
-      test_message:
-        description: 'Valfritt: skriv ei test-melding (støttar {KLOKKA} og {VÆR}) for å lage test.mp3'
-        required: false
-        type: string
-
-permissions:
-  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Sjekk ut kode
+        uses: actions/checkout@v4
+
+      - name: Sett opp Node
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
-      - name: Kjør skript (prod eller test)
-        run: node velkomst.js "${{ inputs.test_message }}"
+          node-version: "20"
+
+      - name: Installer avhengigheter
+        run: npm install node-fetch@3
+
+      - name: Kjør velkomst (Turbo 2.5)
+        run: node velkomst.js
         env:
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
           SKILBREI_LAT: ${{ secrets.SKILBREI_LAT }}
           SKILBREI_LON: ${{ secrets.SKILBREI_LON }}
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+
+          # Stemmemodus:
+          VOICE_MODE: ${{ secrets.VOICE_MODE }} # fixed | random | weekday
           ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
-          LOCATION_NAME: ${{ secrets.LOCATION_NAME }}
-          READABLE_TIME_STYLE: ${{ secrets.READABLE_TIME_STYLE }}
+          ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }} # id1,id2,id3
+
+          VOICE_ID_MONDAY:    ${{ secrets.VOICE_ID_MONDAY }}
+          VOICE_ID_TUESDAY:   ${{ secrets.VOICE_ID_TUESDAY }}
+          VOICE_ID_WEDNESDAY: ${{ secrets.VOICE_ID_WEDNESDAY }}
+          VOICE_ID_THURSDAY:  ${{ secrets.VOICE_ID_THURSDAY }}
+          VOICE_ID_FRIDAY:    ${{ secrets.VOICE_ID_FRIDAY }}
+          VOICE_ID_SATURDAY:  ${{ secrets.VOICE_ID_SATURDAY }}
+          VOICE_ID_SUNDAY:    ${{ secrets.VOICE_ID_SUNDAY }}
+
           LANGUAGE_PRIMER: ${{ secrets.LANGUAGE_PRIMER }}
-          TEST_MESSAGE: ${{ inputs.test_message }}
-      - name: Commit velkomst.mp3 (berre når prod)
-        if: ${{ inputs.test_message == '' }}
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "chore: oppdatert velkomst.mp3"
-          file_pattern: velkomst.mp3
-      - name: Last opp artifact (velkomst.mp3)
-        if: ${{ inputs.test_message == '' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: velkomst-mp3
-          path: velkomst.mp3
-      - name: Last opp artifact (test.mp3)
-        if: ${{ inputs.test_message != '' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-mp3
-          path: test.mp3
