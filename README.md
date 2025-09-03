@@ -1,15 +1,43 @@
-# Velkomst-prosjekt 🎶
+# Velkomst-prosjekt (PERFEKT)
 
-Dette prosjektet lagar ei velkomstmelding som MP3 med norsk stemme.
+**Éi MP3-fil (`velkomst.mp3`)** oppdateres automatisk kvar natt kl. 00:01 (Oslo). Full støtte for `{KLOKKA}` / `{VÆR}` og pen opplesing av klokkeslett.
 
-## Oppsett
+## Funksjonar
+- OpenWeather (norsk, metric) – kan overstyrast med `DUMMY_WEATHER`.
+- Klokke i Oslo-tid og **formatering for TTS** via `READABLE_TIME_STYLE`:
+  - `colon` → `14:32` (standard)
+  - `space` → `14 32` (anbefalt)
+  - `og` → `14 og 32`
+- Vel tekst frå `meldinger.txt` for dagens ukedag.
+- ElevenLabs TTS: modell via secret `ELEVENLABS_MODEL_ID` (default v3), **fallback til v2** automatisk.
+- GitHub Actions:
+  - **prod:** committer `velkomst.mp3` i repo-rota + artifact.
+  - **test:** `test_message` input → genererer `test.mp3` artifact.
 
-1. Lag ei `.env`-fil basert på `.env.example` og fyll inn nøklane dine.
-2. Kjør lokalt med:
-   ```bash
-   npm install
-   node velkomst.js
-   ```
-3. I GitHub: legg inn Secrets i repoet ditt (`OPENWEATHER_API_KEY`, `LAT`, `LON`, `ELEVENLABS_API_KEY`, `VOICE_ID`).
-4. Workflow publiserer `velkomst.mp3` til GitHub Pages.  
-   URL: `https://<brukarnamn>.github.io/<repo>/velkomst.mp3`
+## Secrets (Settings → Secrets and variables → Actions)
+- `OPENWEATHER_API_KEY`
+- `SKILBREI_LAT`
+- `SKILBREI_LON`
+- `ELEVENLABS_API_KEY`
+- `ELEVENLABS_VOICE_ID`
+- `ELEVENLABS_MODEL_ID` (t.d. `eleven_multilingual_v3`; fallback til v2 viss v3 ikkje finst)
+- *(valfritt)* `LOCATION_NAME` – t.d. “Skilbrei” → “… i Skilbrei.”
+- *(valfritt)* `READABLE_TIME_STYLE` – `colon` | `space` | `og`
+- *(valfritt)* `DUMMY_WEATHER` – fast testtekst, hoppar over OpenWeather
+
+## Bruk
+- **Test i Actions:** Gå til **Actions → velkomst → Run workflow** og skriv inn `test_message`. Last ned `test-mp3` artifact.
+- **Produksjon:** Kjør workflow utan `test_message`. `velkomst.mp3` blir committa i repo-rota kvar natt 00:01 (Oslo).
+
+## `meldinger.txt`
+Bruk overskrifter `# Mandag` … `# Søndag`. Éi melding per linje. Du kan fritt plassere `{KLOKKA}` og `{VÆR}`.
+
+## Lokal test (frivillig)
+```
+OPENWEATHER_API_KEY=... SKILBREI_LAT=... SKILBREI_LON=... \
+ELEVENLABS_API_KEY=... ELEVENLABS_VOICE_ID=... ELEVENLABS_MODEL_ID=eleven_multilingual_v3 \
+READABLE_TIME_STYLE=space LOCATION_NAME=Skilbrei \
+TEST_MESSAGE="Hjertelig velkommen! Klokka er {KLOKKA}, og {VÆR}. Ha ein flott dag!" \
+node velkomst.js
+```
+→ Genererer `test.mp3`.
