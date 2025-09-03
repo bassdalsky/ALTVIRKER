@@ -1,0 +1,37 @@
+name: velkomst-test
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_text:
+        description: "Valgfri: egen testtekst på norsk"
+        required: false
+        default: ""
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sjekk ut kode
+        uses: actions/checkout@v4
+
+      - name: Sett opp Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Installer avhengigheter
+        run: npm install node-fetch@3
+
+      - name: Kjør test (norsk TTS)
+        run: node velkomst_test.js
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
+          TEST_TEXT: ${{ github.event.inputs.test_text }}
+
+      - name: Last opp MP3 som artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: velkomst-test-mp3
+          path: velkomst.mp3
