@@ -1,135 +1,122 @@
-// velkomst.js – NORSK ONLY (alltid v2) 🇳🇴
-// Låst til eleven_multilingual_v2 for rein norsk uttale.
-// Ignorerer ELEVENLABS_MODEL_ID. Støtter LANGUAGE_PRIMER og READABLE_TIME_STYLE.
+import fs from "fs";
+import fetch from "node-fetch";
 
-const fs = require("fs");
-
-const WEATHER_KEY = process.env.OPENWEATHER_API_KEY;
+// === Secrets / env ===
+const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
 const LAT = process.env.SKILBREI_LAT;
 const LON = process.env.SKILBREI_LON;
 const ELEVEN_API = process.env.ELEVENLABS_API_KEY;
-const VOICE_ID = process.env.ELEVENLABS_VOICE_ID;
-const LOCATION_NAME = process.env.LOCATION_NAME || "";
-const DUMMY_WEATHER = process.env.DUMMY_WEATHER || "";
-const READABLE_TIME_STYLE = process.env.READABLE_TIME_STYLE || "space"; // colon | space | og
-const PRIMER = process.env.LANGUAGE_PRIMER || ""; // t.d. "Hei!"
 
-// Sjekk secrets
-(function sanity() {
-  const needed = ["OPENWEATHER_API_KEY","SKILBREI_LAT","SKILBREI_LON","ELEVENLABS_API_KEY","ELEVENLABS_VOICE_ID"];
-  const missing = needed.filter(k => !process.env[k]);
-  if (missing.length) {
-    console.error("❌ Mangler secrets:", missing.join(", "));
-    process.exit(1);
-  }
-})();
+// Voice config
+const VOICE_MODE = (process.env.VOICE_MODE || "fixed").toLowerCase(); // fixed | random | weekday
+const VOICE_ID_DEFAULT = process.env.ELEVENLABS_VOICE_ID || "";
+const VOICE_IDS_LIST = (process.env.ELEVENLABS_VOICE_IDS || "")
+  .split(",").map(s => s.trim()).filter(Boolean);
 
-function getNow() {
+// Per-ukedag (engelsk for env-keys)
+const WEEKDAY_VOICES = {
+  monday:    process.env.VOICE_ID_MONDAY    || "",
+  tuesday:   process.env.VOICE_ID_TUESDAY   || "",
+  wednesday: process.env.VOICE_ID_WEDNESDAY || "",
+  thursday:  process.env.VOICE_ID_THURSDAY  || "",
+  friday:    process.env.VOICE_ID_FRIDAY    || "",
+  saturday:  process.env.VOICE_ID_SATURDAY  || "",
+  sunday:    process.env.VOICE_ID_SUNDAY    || ""
+};
+
+// Valgfritt: primer som hjelper norsk uttale (kan være tom)
+const LANGUAGE_PRIMER = process.env.LANGUAGE_PRIMER ?? "Hei! Dette er en norsk melding.";
+
+// === Tid & dato (Oslo) ===
+function nowOslo() {
   const d = new Date();
-  const weekday = d.toLocaleDateString("no-NO", { weekday: "long", timeZone: "Europe/Oslo" }).toLowerCase();
-  const time = d.toLocaleTimeString("no-NO", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Oslo" });
-  const map = { "måndag":"mandag", "tysdag":"tirsdag", "lørdag":"laurdag" };
-  const normWeekday = map[weekday] || weekday;
-  return { weekday: normWeekday, time };
+  const weekday_nb = d.toLocaleDateString("no-NO", { weekday: "long", timeZone: "Europe/Oslo" }).toLowerCase();
+  const weekday_en = d.toLocaleDateString("en-GB", { weekday: "long", timeZone: "Europe/Oslo" }).toLowerCase();
+  const time = d.toLocaleTimeString("no-NO", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Oslo" }).replace(":", " ");
+  return { weekday_nb, weekday_en, time };
 }
 
-function formatTimeForTTS(hhmm, style = READABLE_TIME_STYLE) {
-  const [HH, MM] = hhmm.split(":");
-  if (style === "space") return `${Number(HH)} ${Number(MM)}`;
-  if (style === "og")    return `${Number(HH)} og ${Number(MM)}`;
-  return hhmm;
-}
-
-async function getWeatherText() {
-  if (DUMMY_WEATHER) return DUMMY_WEATHER;
-  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${LAT}&lon=${LON}&appid=${WEATHER_KEY}&units=metric&lang=no`;
+// === Vær ===
+async function getWeather() {
+  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${LAT}&lon=${LON}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=no`;
   const res = await fetch(url);
-  if (!res.ok) throw new Error("Feil fra OpenWeather: " + (await res.text()));
+  if (!res.ok) throw new Error(`Feil fra OpenWeather (${res.status}): ${await res.text()}`);
   const data = await res.json();
-  const temp = Math.round(data.main?.temp);
-  const desc = (data.weather && data.weather[0] && data.weather[0].description) ? data.weather[0].description : "ukjent vær";
-  return `I dag er det ${temp} grader og ${desc}${LOCATION_NAME ? ` i ${LOCATION_NAME}` : ""}.`;
+  const temp = Math.round(data.main?.temp ?? 0);
+  const desc = (data.weather?.[0]?.description ?? "").trim();
+  return `${temp} grader og ${desc}`;
 }
 
-function pickMessageForDay(weekday) {
-  const text = fs.readFileSync("meldinger.txt", "utf-8");
-  const lines = text.split(/\r?\n/);
-
-  const aliases = {
-    "mandag": ["mandag","måndag"],
-    "tirsdag": ["tirsdag","tysdag"],
-    "onsdag": ["onsdag"],
-    "torsdag": ["torsdag"],
-    "fredag": ["fredag"],
-    "laurdag": ["laurdag","lørdag"],
-    "søndag": ["søndag"]
-  };
-  const wanted = Object.entries(aliases).find(([k, arr]) => arr.includes(weekday))?.[0] || weekday;
-
-  let active = false; const msgs = [];
-  for (const raw of lines) {
-    const line = raw.trim();
-    if (line.startsWith("#")) { active = line.toLowerCase().includes(wanted); continue; }
-    if (active && line.length > 0) msgs.push(line);
+// === Meldinger (fra meldinger.txt) ===
+function pickMessageFor(weekday_nb) {
+  const raw = fs.readFileSync("meldinger.txt", "utf-8");
+  const lines = raw.split("\n");
+  let active = false;
+  const msgs = [];
+  for (const line of lines) {
+    if (line.trim().startsWith("[")) {
+      active = line.toLowerCase().includes(weekday_nb);
+      continue;
+    }
+    if (active && line.trim() !== "") msgs.push(line.trim());
   }
-  if (msgs.length === 0) return "Velkommen heim! Lysa er tent.";
-  return msgs[Math.floor(Math.random() * msgs.length)];
+  return msgs.length ? msgs[Math.floor(Math.random() * msgs.length)] : "Velkommen hjem. Lysa blir tent.";
 }
 
-function applyPlaceholders(text, time, weatherText) {
-  let out = text;
-  const hasClock = /\{KLOKKA\}/.test(out);
-  const hasWeather = /\{VÆR\}|\{VAER\}/.test(out);
-
-  out = out.replace(/\{KLOKKA\}/g, formatTimeForTTS(time));
-  out = out.replace(/\{VÆR\}|\{VAER\}/g, weatherText);
-
-  if (!hasClock || !hasWeather) {
-    const tails = [];
-    if (!hasClock) tails.push(`Klokka er ${formatTimeForTTS(time)}.`);
-    if (!hasWeather) tails.push(weatherText);
-    if (tails.length) out = `${out} ${tails.join(" ")}`;
+// === Velg Voice ID iht. VOICE_MODE ===
+function chooseVoiceId(weekday_en) {
+  if (VOICE_MODE === "weekday") {
+    const id = WEEKDAY_VOICES[weekday_en] || "";
+    if (id) return id;
+    if (VOICE_ID_DEFAULT) return VOICE_ID_DEFAULT;
+    if (VOICE_IDS_LIST.length) return VOICE_IDS_LIST[0];
+    throw new Error("Ingen voice-id funnet for weekday-mode.");
   }
-  return out;
+  if (VOICE_MODE === "random") {
+    const pool = VOICE_IDS_LIST.length ? VOICE_IDS_LIST : (VOICE_ID_DEFAULT ? [VOICE_ID_DEFAULT] : []);
+    if (!pool.length) throw new Error("Ingen voice-ids definert for random-mode.");
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+  if (!VOICE_ID_DEFAULT) throw new Error("VOICE_MODE=fixed, men ELEVENLABS_VOICE_ID mangler.");
+  return VOICE_ID_DEFAULT;
 }
 
-async function callEleven(text) {
-  const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`, {
+// === TTS (Eleven Turbo 2.5) ===
+async function makeMp3(voiceId, text) {
+  const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
     method: "POST",
-    headers: { "xi-api-key": ELEVEN_API, "Content-Type": "application/json", "Accept": "audio/mpeg" },
-    body: JSON.stringify({ model_id: "eleven_multilingual_v2", text, voice_settings: { stability: 0.5, similarity_boost: 0.8 } })
+    headers: {
+      "Accept": "audio/mpeg",
+      "Content-Type": "application/json",
+      "xi-api-key": ELEVEN_API
+    },
+    body: JSON.stringify({
+      model_id: "eleven_turbo_v2_5",                // <- Turbo 2.5
+      text,
+      voice_settings: { stability: 0.45, similarity_boost: 0.8 }
+    })
   });
-  if (!res.ok) throw new Error(await res.text());
-  return Buffer.from(await res.arrayBuffer());
+
+  if (!res.ok) throw new Error(`Feil fra ElevenLabs (${res.status}): ${await res.text()}`);
+
+  const buf = Buffer.from(await res.arrayBuffer());
+  fs.writeFileSync("velkomst.mp3", buf);
+  console.log(`✅ Lagret: velkomst.mp3 (voice: ${voiceId}, model: eleven_turbo_v2_5)`);
 }
 
-async function makeMp3(text, outfile) {
-  const buf = await callEleven(text);
-  fs.writeFileSync(outfile, buf);
-  console.log(`✅ Generert ${outfile} (modell: eleven_multilingual_v2)`);
-}
-
+// === MAIN ===
 (async () => {
   try {
-    const argText = process.argv.slice(2).join(" ").trim();
-    const testMessage = process.env.TEST_MESSAGE && process.env.TEST_MESSAGE.trim();
-    const { weekday, time } = getNow();
-    const weatherText = await getWeatherText();
+    const { weekday_nb, weekday_en, time } = nowOslo();
+    const weather = await getWeather();
+    const msg = pickMessageFor(weekday_nb);
 
-    const injectPrimer = (s) => (PRIMER ? (PRIMER + " " + s) : s);
+    // Primer + dagens melding + klokke + vær
+    const fullText = `${LANGUAGE_PRIMER} ${msg} Klokka er ${time}. Ute er det ${weather}.`;
+    console.log("[DEBUG] TTS-tekst:", fullText);
 
-    if (testMessage || argText) {
-      const raw = testMessage || argText;
-      const finalText = injectPrimer(applyPlaceholders(raw, time, weatherText));
-      console.log("[TEST] Tekst til tale:", finalText);
-      await makeMp3(finalText, "test.mp3");
-      return;
-    }
-
-    const baseMessage = pickMessageForDay(weekday);
-    const fullText = injectPrimer(applyPlaceholders(baseMessage, time, weatherText));
-    console.log("[PROD] Tekst til tale:", fullText);
-    await makeMp3(fullText, "velkomst.mp3");
+    const voiceId = chooseVoiceId(weekday_en);
+    await makeMp3(voiceId, fullText);
   } catch (err) {
     console.error("❌ Feil:", err);
     process.exit(1);
