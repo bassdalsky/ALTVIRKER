@@ -1,35 +1,54 @@
-name: velkomst-test-live
+import fs from "fs";
+import fetch from "node-fetch";
 
-on:
-  workflow_dispatch: {}
+const ELEVEN_API = process.env.ELEVENLABS_API_KEY;
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Sjekk ut kode
-        uses: actions/checkout@v4
+const VOICE_MODE = (process.env.VOICE_MODE || "fixed").toLowerCase(); // fixed | random
+const VOICE_ID_DEFAULT = process.env.ELEVENLABS_VOICE_ID || "";
+const VOICE_IDS_LIST = (process.env.ELEVENLABS_VOICE_IDS || "")
+  .split(",").map(s => s.trim()).filter(Boolean);
 
-      - name: Sett opp Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
+const TEST_TEXT = process.env.TEST_TEXT || "Hei! Dette er en norsk testmelding. Velkommen hjem til Skilbrei.";
+const LANGUAGE_PRIMER = process.env.LANGUAGE_PRIMER ?? "Hei! Dette er en norsk melding.";
 
-      - name: Installer avhengigheter
-        run: npm install node-fetch@3
+function chooseVoiceId() {
+  if (VOICE_MODE === "random") {
+    const pool = VOICE_IDS_LIST.length ? VOICE_IDS_LIST : (VOICE_ID_DEFAULT ? [VOICE_ID_DEFAULT] : []);
+    if (!pool.length) throw new Error("Ingen voice-ids definert for random test.");
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+  if (!VOICE_ID_DEFAULT) throw new Error("VOICE_MODE=fixed, men ELEVENLABS_VOICE_ID mangler.");
+  return VOICE_ID_DEFAULT;
+}
 
-      - name: Kjør live test (vær + klokke, Turbo 2.5)
-        run: node velkomst_test_live.js
-        env:
-          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
-          SKILBREI_LAT: ${{ secrets.SKILBREI_LAT }}
-          SKILBREI_LON: ${{ secrets.SKILBREI_LON }}
-          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
-          ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
-          LANGUAGE_PRIMER: ${{ secrets.LANGUAGE_PRIMER }}
+async function tts(voiceId, text) {
+  const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+    method: "POST",
+    headers: {
+      "Accept": "audio/mpeg",
+      "Content-Type": "application/json",
+      "xi-api-key": ELEVEN_API
+    },
+    body: JSON.stringify({
+      model_id: "eleven_turbo_v2_5",
+      text: `${LANGUAGE_PRIMER} ${text}`,
+      voice_settings: { stability: 0.45, similarity_boost: 0.8 }
+    })
+  });
 
-      - name: Last opp MP3 (artifact)
-        uses: actions/upload-artifact@v4
-        with:
-          name: velkomst-test-live-mp3
-          path: velkomst.mp3
+  if (!res.ok) throw new Error(`Feil fra ElevenLabs (${res.status}): ${await res.text()}`);
+
+  const buf = Buffer.from(await res.arrayBuffer());
+  fs.writeFileSync("velkomst.mp3", buf);
+  console.log(`✅ Testfil generert (model: eleven_turbo_v2_5)`);
+}
+
+(async () => {
+  try {
+    const voiceId = chooseVoiceId();
+    await tts(voiceId, TEST_TEXT);
+  } catch (e) {
+    console.error("❌ Feil:", e);
+    process.exit(1);
+  }
+})();
