@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write  # trengs for å pushe mp3 til repo
+  contents: write
 
 jobs:
   build:
@@ -27,28 +27,14 @@ jobs:
       - name: Kjør velkomst (Turbo 2.5, norsk)
         run: node velkomst.js
         env:
-          # Vær/posisjon
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
           SKILBREI_LAT: ${{ secrets.SKILBREI_LAT }}
           SKILBREI_LON: ${{ secrets.SKILBREI_LON }}
-
-          # ElevenLabs
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
           LANGUAGE_PRIMER: ${{ secrets.LANGUAGE_PRIMER }}
-
-          # Stemmemodus og ID-er
-          VOICE_MODE: ${{ secrets.VOICE_MODE }}                    # fixed | random | weekday
-          ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}  # brukt når VOICE_MODE=fixed
-          ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}# kommaseparert: id1,id2,id3
-
-          # (valfritt, kun ved weekday-modus)
-          VOICE_ID_MONDAY:    ${{ secrets.VOICE_ID_MONDAY }}
-          VOICE_ID_TUESDAY:   ${{ secrets.VOICE_ID_TUESDAY }}
-          VOICE_ID_WEDNESDAY: ${{ secrets.VOICE_ID_WEDNESDAY }}
-          VOICE_ID_THURSDAY:  ${{ secrets.VOICE_ID_THURSDAY }}
-          VOICE_ID_FRIDAY:    ${{ secrets.VOICE_ID_FRIDAY }}
-          VOICE_ID_SATURDAY:  ${{ secrets.VOICE_ID_SATURDAY }}
-          VOICE_ID_SUNDAY:    ${{ secrets.VOICE_ID_SUNDAY }}
+          VOICE_MODE: ${{ secrets.VOICE_MODE }}
+          ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
+          ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
 
       - name: Commit og push velkomst.mp3 (fast URL)
         run: |
@@ -58,7 +44,7 @@ jobs:
           git commit -m "Oppdatert velkomst.mp3" || echo "Ingen endringer"
           git push
 
-      - name: Last opp som artifact (for enkel nedlasting)
+      - name: Last opp som artifact
         uses: actions/upload-artifact@v4
         with:
           name: velkomst-mp3
