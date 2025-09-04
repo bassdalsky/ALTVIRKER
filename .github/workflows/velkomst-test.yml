@@ -4,13 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       test_text:
-        description: "Valgfri: egendefinert norsk testtekst"
+        description: "Testtekst"
         required: false
-        default: ""
-      voice_mode:
-        description: "fixed | random"
-        required: false
-        default: "fixed"
+        default: "Hei! Dette er en norsk testmelding."
 
 jobs:
   build:
@@ -27,20 +23,12 @@ jobs:
       - name: Installer avhengigheter
         run: npm install node-fetch@3
 
-      - name: Kjør test (Turbo 2.5, ren norsk tale)
+      - name: Kjør test (Turbo 2.5)
         run: node velkomst_test.js
         env:
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
-
-          VOICE_MODE: ${{ github.event.inputs.voice_mode }}
+          VOICE_MODE: ${{ secrets.VOICE_MODE }}
           ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
           ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
-
           LANGUAGE_PRIMER: ${{ secrets.LANGUAGE_PRIMER }}
           TEST_TEXT: ${{ github.event.inputs.test_text }}
-
-      - name: Last opp test MP3
-        uses: actions/upload-artifact@v4
-        with:
-          name: velkomst-test-mp3
-          path: velkomst.mp3
