@@ -19,7 +19,10 @@ jobs:
         run: npm install node-fetch@3
 
       - name: Kjør live test (vær + klokke, Turbo 2.5)
-        run: node velkomst_test_live.js
+        run: |
+          # Kjør testscriptet og flytt MP3 så vi ikke overskriver prod-fila
+          node velkomst_test_live.js
+          mv velkomst.mp3 velkomst_test_live.mp3
         env:
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
           SKILBREI_LAT: ${{ secrets.SKILBREI_LAT }}
@@ -28,8 +31,8 @@ jobs:
           ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
           LANGUAGE_PRIMER: ${{ secrets.LANGUAGE_PRIMER }}
 
-      - name: Last opp MP3 (artifact)
+      - name: Last opp som artifact (kun test)
         uses: actions/upload-artifact@v4
         with:
           name: velkomst-test-live-mp3
-          path: velkomst.mp3
+          path: velkomst_test_live.mp3
