@@ -7,13 +7,11 @@ const LAT = process.env.SKILBREI_LAT;
 const LON = process.env.SKILBREI_LON;
 const ELEVEN_API = process.env.ELEVENLABS_API_KEY;
 
-// Voice config
+// Voice config (som før)
 const VOICE_MODE = (process.env.VOICE_MODE || "fixed").toLowerCase(); // fixed | random | weekday
 const VOICE_ID_DEFAULT = process.env.ELEVENLABS_VOICE_ID || "";
 const VOICE_IDS_LIST = (process.env.ELEVENLABS_VOICE_IDS || "")
   .split(",").map(s => s.trim()).filter(Boolean);
-
-// Per-ukedag (engelsk for env-keys)
 const WEEKDAY_VOICES = {
   monday:    process.env.VOICE_ID_MONDAY    || "",
   tuesday:   process.env.VOICE_ID_TUESDAY   || "",
@@ -24,19 +22,28 @@ const WEEKDAY_VOICES = {
   sunday:    process.env.VOICE_ID_SUNDAY    || ""
 };
 
-// Valgfritt: primer som hjelper norsk uttale (kan være tom)
+// Primer (valfri)
 const LANGUAGE_PRIMER = process.env.LANGUAGE_PRIMER ?? "Hei! Dette er en norsk melding.";
 
-// === Tid & dato (Oslo) ===
+// ——— Normaliser ukedag (støtt bokmål + nynorsk) ———
+const DAY_ALIASES = {
+  monday:    ["mandag","måndag"],
+  tuesday:   ["tirsdag","tysdag"],
+  wednesday: ["onsdag"],
+  thursday:  ["torsdag"],
+  friday:    ["fredag"],
+  saturday:  ["lørdag","laurdag"],
+  sunday:    ["søndag"]
+};
+
 function nowOslo() {
   const d = new Date();
-  const weekday_nb = d.toLocaleDateString("no-NO", { weekday: "long", timeZone: "Europe/Oslo" }).toLowerCase();
   const weekday_en = d.toLocaleDateString("en-GB", { weekday: "long", timeZone: "Europe/Oslo" }).toLowerCase();
   const time = d.toLocaleTimeString("no-NO", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Oslo" }).replace(":", " ");
-  return { weekday_nb, weekday_en, time };
+  return { weekday_en, time };
 }
 
-// === Vær ===
+// ——— Vær ———
 async function getWeather() {
   const url = `https://api.openweathermap.org/data/2.5/weather?lat=${LAT}&lon=${LON}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=no`;
   const res = await fetch(url);
@@ -47,23 +54,28 @@ async function getWeather() {
   return `${temp} grader og ${desc}`;
 }
 
-// === Meldinger (fra meldinger.txt) ===
-function pickMessageFor(weekday_nb) {
+// ——— Meldinger ———
+function pickMessageFor(weekday_en) {
   const raw = fs.readFileSync("meldinger.txt", "utf-8");
   const lines = raw.split("\n");
+  const aliases = DAY_ALIASES[weekday_en] || [];
   let active = false;
   const msgs = [];
+
   for (const line of lines) {
-    if (line.trim().startsWith("[")) {
-      active = line.toLowerCase().includes(weekday_nb);
+    const t = line.trim();
+    if (t.startsWith("[")) {
+      // finn [seksjon] og sjekk om den matcher ein av aliasane
+      const header = t.slice(1, -1).toLowerCase();
+      active = aliases.includes(header);
       continue;
     }
-    if (active && line.trim() !== "") msgs.push(line.trim());
+    if (active && t !== "") msgs.push(t);
   }
-  return msgs.length ? msgs[Math.floor(Math.random() * msgs.length)] : "Velkommen hjem. Lysa blir tent.";
+  return msgs.length ? msgs[Math.floor(Math.random() * msgs.length)] : "Velkomen heim. Lysa blir tende.";
 }
 
-// === Velg Voice ID iht. VOICE_MODE ===
+// ——— Velg Voice ID ———
 function chooseVoiceId(weekday_en) {
   if (VOICE_MODE === "weekday") {
     const id = WEEKDAY_VOICES[weekday_en] || "";
@@ -81,7 +93,7 @@ function chooseVoiceId(weekday_en) {
   return VOICE_ID_DEFAULT;
 }
 
-// === TTS (Eleven Turbo 2.5) ===
+// ——— TTS (Eleven Turbo 2.5) ———
 async function makeMp3(voiceId, text) {
   const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
     method: "POST",
@@ -91,28 +103,32 @@ async function makeMp3(voiceId, text) {
       "xi-api-key": ELEVEN_API
     },
     body: JSON.stringify({
-      model_id: "eleven_turbo_v2_5",                // <- Turbo 2.5
+      model_id: "eleven_turbo_v2_5",
       text,
       voice_settings: { stability: 0.45, similarity_boost: 0.8 }
     })
   });
-
   if (!res.ok) throw new Error(`Feil fra ElevenLabs (${res.status}): ${await res.text()}`);
-
   const buf = Buffer.from(await res.arrayBuffer());
   fs.writeFileSync("velkomst.mp3", buf);
   console.log(`✅ Lagret: velkomst.mp3 (voice: ${voiceId}, model: eleven_turbo_v2_5)`);
 }
 
-// === MAIN ===
+// ——— MAIN ———
 (async () => {
   try {
-    const { weekday_nb, weekday_en, time } = nowOslo();
+    const { weekday_en, time } = nowOslo();
     const weather = await getWeather();
-    const msg = pickMessageFor(weekday_nb);
+    const template = pickMessageFor(weekday_en);
 
-    // Primer + dagens melding + klokke + vær
-    const fullText = `${LANGUAGE_PRIMER} ${msg} Klokka er ${time}. Ute er det ${weather}.`;
+    // Erstatt plasshaldarar i teksten
+    let message = template
+      .replaceAll("{KLOKKA}", time)
+      .replaceAll("{VÆR}", weather)
+      .replaceAll("{VAER}", weather); // fallback om du skriv {VAER}
+
+    // Legg på primer først for å sikre nynorsk/norsk uttale
+    const fullText = `${LANGUAGE_PRIMER} ${message}`;
     console.log("[DEBUG] TTS-tekst:", fullText);
 
     const voiceId = chooseVoiceId(weekday_en);
