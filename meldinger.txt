@@ -4,8 +4,8 @@ Hjertelig velkommen! Eg slår på litt lys og gjer det koseleg. {VÆR}. Klokka e
 Heisann og hoppsann! Eg slår på litt lys og gjer det triveleg. Klokka er {KLOKKA}, og {VÆR}. Måndag betyr boss, men hugs: du kastar søppel – ikkje humøret ditt. Ha ein fin kveld!
 
 [tirsdag]
-Så kjekt å sjå deg igjen! Eg slår på litt lys og systema. Klokka er {KLOKKA}, og {VÆR}. Tysdag er kanskje litt grå, men hugs – no er du berre fire dagar frå helg.
-Velkommen heim! Eg slår på litt lys og gjer det koseleg. {VÆR}. Klokka er {KLOKKA}. Tysdag er som ein pauseknapp midt mellom måndag og onsdag – bruk han til noko du likar.
+Så kjekt å sjå deg! Eg slår på litt lys og systema. Klokka er {KLOKKA}, og {VÆR}. Tysdag er kanskje litt grå, men hugs – no er du berre fire dagar frå helg.
+Velkommen til meg! Eg slår på litt lys og gjer det koseleg. {VÆR}. Klokka er {KLOKKA}. Tysdag er som ein pauseknapp midt mellom måndag og onsdag – bruk han til noko du likar.
 Så hyggeleg at du kom inn her! Eg slår på litt lys og gjer det triveleg. Klokka er {KLOKKA}, og {VÆR}. Tysdag er dagen då lite skjer, men det betyr at du har fri til å gjere akkurat det du vil. Kos deg!
 
 [onsdag]
@@ -16,12 +16,12 @@ Hjertelig velkommen! Eg slår på litt lys og gjer det triveleg. {VÆR}. Klokka 
 [torsdag]
 Hei! Velkommen inn i varmen! Eg slår på litt lys og systema. Klokka er {KLOKKA}, og {VÆR}. I dag er det torsdag – hugs bosset, og gled deg til fredagen som kjem straks.
 Så kjekt å sjå deg igjen! Eg slår på litt lys og gjer det koseleg. Klokka er {KLOKKA}, og {VÆR}. Torsdag betyr boss, men også at helga står og bankar på døra.
-Velkommen heim til den avanserte heimen din! Eg slår på litt lys og gjer det triveleg. {VÆR}. Klokka er {KLOKKA}. Torsdag er kanskje ein boss-dag, men trøysta er at du berre er eitt steg unna helg og taco.
+Velkommen heim til den avanserte heimen! Eg slår på litt lys og gjer det triveleg. {VÆR}. Klokka er {KLOKKA}. Torsdag er kanskje ein dag du må gå ut med bosset, men trøysta er at du berre er eitt steg unna helg og taco.
 
 [fredag]
 God helg! Eg slår på litt lys og systema. Klokka er {KLOKKA}, og {VÆR}. Fredagen er her – ta av deg skoa, sett på noko musikk og lat som om oppvasken ikkje finst.
-Så kjekt å sjå deg heim att! Eg slår på litt lys og gjer det koseleg. {VÆR}. Klokka er {KLOKKA}. Fredag betyr helg, og helg betyr kos – kanskje ein film, kanskje ein pizza, kanskje begge delar.
-Velkommen inn til den smarte heimen din! Eg slår på litt lys og gjer det triveleg. Klokka er {KLOKKA}, og {VÆR}. Fredag gjer alle litt gladare – bortsett frå støvsugaren, som veit at han ikkje får jobbe i dag.
+Hjerteleg velkommen! Eg slår på litt lys og gjer det koseleg. {VÆR}. Klokka er {KLOKKA}. Fredag betyr helg, og helg betyr kos – kanskje ein film, kanskje ein pizza, kanskje begge delar.
+Velkommen inn til den smarte heimen! Eg slår på litt lys og gjer det triveleg. Klokka er {KLOKKA}, og {VÆR}. Fredag gjer alle litt gladare – bortsett frå støvsugaren, som veit at han ikkje får jobbe i dag.
 
 [laurdag]
 Velkommen inn i varmen! Eg slår på litt lys og systema. Klokka er {KLOKKA}, og {VÆR}. Laurdag betyr fritid – tid for å gjere akkurat det DU har lyst til. Kanskje ein tur ut, eller berre sofakos med noko godt i skåla.
@@ -32,4 +32,5 @@ Hjertelig velkommen! Eg slår på litt lys og gjer det triveleg. Klokka er {KLOK
 Hjertelig velkommen! Eg slår på litt lys og systema. Klokka er {KLOKKA}, og {VÆR}. Hugs papirbosset – elles kjem naboen til å minne deg på det med lange blikk. Ha ein riktig fin søndag!
 Heisann, velkommen inn! Eg slår på litt lys og gjer det koseleg. Klokka er {KLOKKA}. {VÆR}. Søndag er dagen då alt går litt sakte – akkurat slik det skal vere. Kos deg! Hugs papirbosset, og ha ein super søndag!
 Så kjekt å sjå deg! Eg slår på litt lys og gjer det triveleg. {VÆR}. Klokka er {KLOKKA}. Søndag betyr ro, men hugs papirbosset – og i morgon er det måndag igjen. Nyt dagen dobbelt så mykje!
+
 
