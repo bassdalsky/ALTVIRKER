@@ -1,4 +1,5 @@
-name: Velkomst (manuell test)
+name: Velkomst (bygg)
+
 on:
   workflow_dispatch:
 
@@ -38,16 +39,5 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add velkomst.mp3
-          git commit -m "Oppdatert velkomst.mp3 (manuell test)" || echo "Ingen endringer"
+          git commit -m "Oppdatert velkomst.mp3" || echo "Ingen endringer"
           git push
-
-      - name: Varsle Homey (Velkomst)
-        env:
-          HOMEY_WEBHOOK_URL: ${{ secrets.HOMEY_WEBHOOK_URL }}
-        run: |
-          if [ -n "$HOMEY_WEBHOOK_URL" ]; then
-            echo "Kaller Homey velkomst-webhook..."
-            curl -sS -X POST "$HOMEY_WEBHOOK_URL"
-          else
-            echo "HOMEY_WEBHOOK_URL ikke satt — hopper over ping."
-          fi
