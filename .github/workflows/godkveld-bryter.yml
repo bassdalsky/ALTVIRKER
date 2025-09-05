@@ -1,0 +1,38 @@
+name: godkveld-intro-setup
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sjekk ut kode
+        uses: actions/checkout@v4
+
+      - name: Sett opp Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Installer avhengigheter
+        run: npm install
+
+      - name: Generer godkveld-klipp (alle stemmer x alle meldinger)
+        run: node godkveld_setup.js
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
+          VOICE_LABELS: Olaf,Mia,Emma
+          LANGUAGE_PRIMER: ${{ secrets.LANGUAGE_PRIMER }}
+
+      - name: Commit og push godkveld-klipp
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add godkveld/*.mp3
+          git commit -m "Godkveld-klipp generert (forhånd)" || echo "Ingen endringer"
+          git push
