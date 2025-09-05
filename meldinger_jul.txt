@@ -1,0 +1,34 @@
+[mandag]
+Hjertelig velkommen! Lysa er tent og litt julestemning på plass. Klokka er {KLOKKA}, og {VÆR}. I dag må du hugse papirbosset – nissen likar ryddige piper.
+Så kjekt å sjå deg! Eg har tent lysa. No er klokka {KLOKKA}, og {VÆR}. Det er måndag, så få papirbosset ut før reinsdyra parkerer overalt.
+Heisann! Lysa blir slått på for deg. Klokka er {KLOKKA}, og {VÆR}. Papirboss i dag – vi pakkar inn gåver, men pakkar ut bosset. God jul!
+
+[tirsdag]
+Hjertelig velkommen! Eg har slått på lysa, og mistelteinen heng rett. Klokka er {KLOKKA}, og {VÆR}. Tysdag før jul er perfekt for kakao og litt småpjask.
+Så kjekt å sjå deg! Lysa er tent. No er klokka {KLOKKA}, og {VÆR}. Tysdag er ein god dag for å smugsmake på pepperkaker – eg seier ingenting.
+Heisann! Eg har tent lysa. Klokka er {KLOKKA}, og {VÆR}. Tysdag i advent: ta det med ro, sett på julesong og lat som du har kontroll.
+
+[onsdag]
+Hjertelig velkommen! Lysa blir slått på for deg. Klokka er {KLOKKA}, og {VÆR}. Det er onsdag – bossplassen på Sande er open frå 12 til 18. Nissen kildesorterer òg.
+Så kjekt å sjå deg! Eg har tent lysa. Klokka er {KLOKKA}, og {VÆR}. Onsdag og julemodus – ein tur til bossplassen før gløggen er lov.
+Heisann! Lysa er tent og blankpussa. Klokka er {KLOKKA}, og {VÆR}. Hugs Sande 12–18 i dag – sjølv julenissar må kvitte seg med emballasje.
+
+[torsdag]
+Hjertelig velkommen! Eg har slått på lysa. Klokka er {KLOKKA}, og {VÆR}. Torsdag betyr bosspannet – la snøen glitre, ikkje bosslokket.
+Så kjekt å sjå deg! Lysa blir slått på for deg. Klokka er {KLOKKA}, og {VÆR}. Torsdag i desember: få bosspannet ned, så slepp du juletrøbbel.
+Heisann! Eg har tent lysa. Klokka er {KLOKKA}, og {VÆR}. Bosspann i dag – ein liten nisse-dugnad før helgefri.
+
+[fredag]
+Hjertelig velkommen! Lysa er tent. Klokka er {KLOKKA}, og {VÆR}. Fredag og førjulstid: pizza, julefilm og null stress – nesten.
+Så kjekt å sjå deg heim att! Eg har slått på lysa. Klokka er {KLOKKA}, og {VÆR}. Fredag: pakk inn gåver, pakk ut kosemodus.
+Heisann! Lysa blir slått på for deg. Klokka er {KLOKKA}, og {VÆR}. Fredag i advent – la støvsugaren få fri og spel julelista.
+
+[lørdag]
+Hjertelig velkommen! Eg har tent lysa. Klokka er {KLOKKA}, og {VÆR}. Laurdag + jul = baking, litt kaos og mykje kos.
+Så kjekt å sjå deg igjen! Lysa er tent og klart. Klokka er {KLOKKA}, og {VÆR}. Laurdag: perfekt for små nisse-ærend og stor sofakos.
+Heisann! Eg har slått på lysa. Klokka er {KLOKKA}, og {VÆR}. Laurdag i desember – kanskje ein liten juletur og ein stor kopp kakao?
+
+[søndag]
+Hjertelig velkommen! Lysa blir slått på for deg. Klokka er {KLOKKA}, og {VÆR}. Det er søndag – hugs papirbosset før julefreden senkar seg.
+Så kjekt å sjå deg! Eg har tent lysa og gjort det julekoseleg. Klokka er {KLOKKA}, og {VÆR}. Søndag og advent – papirboss først, så peis og peparkaker.
+Heisann! Lysa er tent. Klokka er {KLOKKA}, og {VÆR}. Søndag: ro i stova, men hugs papirbosset – nissen likar orden.
