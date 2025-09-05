@@ -1,25 +1,50 @@
-name: Godkveld
+name: Godkveld (manuell test)
 on:
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Sjekk ut repo (rent)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          clean: true
+
+      - name: Sett opp Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install node-fetch@3
-      - run: node godkveld_bryter.js
+
+      - name: Installer avhengigheter
+        run: npm install node-fetch@3
+
+      - name: Generer godkveld.mp3
+        run: node godkveld_bryter.js
         env:
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
           ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
           LANGUAGE_PRIMER: ${{ secrets.LANGUAGE_PRIMER }}
-      - run: |
-          git config user.name github-actions
-          git config user.email github-actions@github.com
+
+      - name: Commit og push
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add godkveld.mp3
-          git commit -m "Oppdatert godkveld" || echo "Ingen endringer"
+          git commit -m "Oppdatert godkveld.mp3 (manuell test)" || echo "Ingen endringer"
           git push
-      - run: curl -X POST "${{ secrets.HOMEY_WEBHOOK_URL_NIGHT }}"
+
+      - name: Varsle Homey (Godkveld)
+        env:
+          HOMEY_WEBHOOK_URL_NIGHT: ${{ secrets.HOMEY_WEBHOOK_URL_NIGHT }}
+        run: |
+          if [ -n "$HOMEY_WEBHOOK_URL_NIGHT" ]; then
+            echo "Kaller Homey godkveld-webhook..."
+            curl -sS -X POST "$HOMEY_WEBHOOK_URL_NIGHT"
+          else
+            echo "HOMEY_WEBHOOK_URL_NIGHT ikke satt — hopper over ping."
+          fi
