@@ -1,4 +1,4 @@
-# Mandag# Mandag[mandag]
+[mandag]
 Velkommen inn i varmen! Eg slår på litt lys og systema. Klokka er {KLOKKA}, og {VÆR}. Hugs å setje ut bossdunken – elles kjem naboen til å minne deg på det med lange blikk. Ha ein god start på veka!
 Hjertelig velkommen! Eg slår på litt lys og gjer det koseleg. {VÆR}. Klokka er {KLOKKA}. I dag er det måndag, så hugs bosset. Etterpå fortener du å leggje beina på bordet og ta ein kaffe.
 Heisann og hoppsann! Eg slår på litt lys og gjer det triveleg. Klokka er {KLOKKA}, og {VÆR}. Måndag betyr boss, men hugs: du kastar søppel – ikkje humøret ditt. Ha ein fin kveld!
@@ -32,5 +32,6 @@ Hjertelig velkommen! Eg slår på litt lys og gjer det triveleg. Klokka er {KLOK
 Hjertelig velkommen! Eg slår på litt lys og systema. Klokka er {KLOKKA}, og {VÆR}. Hugs papirbosset – elles kjem naboen til å minne deg på det med lange blikk. Ha ein riktig fin søndag!
 Heisann, velkommen inn! Eg slår på litt lys og gjer det koseleg. Klokka er {KLOKKA}. {VÆR}. Søndag er dagen då alt går litt sakte – akkurat slik det skal vere. Kos deg! Hugs papirbosset, og ha ein super søndag!
 Så kjekt å sjå deg! Eg slår på litt lys og gjer det triveleg. {VÆR}. Klokka er {KLOKKA}. Søndag betyr ro, men hugs papirbosset – og i morgon er det måndag igjen. Nyt dagen dobbelt så mykje!
+
 
 
