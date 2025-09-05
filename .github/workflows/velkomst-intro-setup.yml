@@ -1,0 +1,40 @@
+name: velkomst-intro-setup
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sjekk ut kode
+        uses: actions/checkout@v4
+
+      - name: Sett opp Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Installer avhengigheter
+        run: npm install node-fetch@3
+
+      - name: Generer introer (alle ukedager x alle stemmer)
+        run: node intro_setup.js
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
+          VOICE_LABELS: Olaf,Mia,Emma
+          LANGUAGE_PRIMER: ${{ secrets.LANGUAGE_PRIMER }}
+          INTRO_FILE: meldinger.txt
+          INTRO_DIR: intros
+
+      - name: Commit og push introfiler
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add intros/*.mp3
+          git commit -m "Oppdatert velkomst-introer" || echo "Ingen endringer"
+          git push
