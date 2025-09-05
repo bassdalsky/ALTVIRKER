@@ -1,18 +1,19 @@
+// Lager en ny velkomst.mp3 NÅ fra meldinger.txt + vær + klokke
+// Forventer secrets: ELEVENLABS_API_KEY, ELEVENLABS_VOICE_IDS, LANGUAGE_PRIMER,
+//                    OPENWEATHER_API_KEY, SKILBREI_LAT, SKILBREI_LON
 import fetch from "node-fetch";
 import fs from "fs";
 
 const ELEVEN_API_KEY = process.env.ELEVENLABS_API_KEY;
-const VOICE_IDS = (process.env.ELEVENLABS_VOICE_IDS || "").split(",").map(s => s.trim()).filter(Boolean);
+const VOICE_IDS = (process.env.ELEVENLABS_VOICE_IDS || "")
+  .split(",").map(s => s.trim()).filter(Boolean);
 const LANGUAGE_PRIMER = process.env.LANGUAGE_PRIMER || "Hei! Dette er en norsk melding.";
 
 const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
 const LAT = process.env.SKILBREI_LAT;
 const LON = process.env.SKILBREI_LON;
 
-// MANUELL JULEMODUS: on = bruk meldinger_jul.txt, ellers meldinger.txt
-const JULEMODUS = (process.env.JULEMODUS || "").toLowerCase() === "on";
-const MESSAGES_FILE = JULEMODUS ? "meldinger_jul.txt" : "meldinger.txt";
-
+// ---- utils
 function pick(a){ return a[Math.floor(Math.random()*a.length)] }
 
 function nowOslo() {
@@ -26,6 +27,7 @@ function nowOslo() {
 
 async function getWeather() {
   const url = `https://api.openweathermap.org/data/2.5/weather?lat=${LAT}&lon=${LON}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=no`;
+  console.log("[DEBUG] Henter vær:", url.replace(OPENWEATHER_API_KEY, "***"));
   const r = await fetch(url);
   if (!r.ok) throw new Error(`Feil fra OpenWeather (${r.status}): ${await r.text()}`);
   const j = await r.json();
@@ -34,7 +36,7 @@ async function getWeather() {
   return `${t} grader og ${d}`;
 }
 
-// parser [seksjon]-blokker
+// parser [seksjon]-blokker i meldinger.txt
 function parseBlocks(txt) {
   const map = {};
   let cur = null;
@@ -74,25 +76,27 @@ async function tts(voiceId, text, outPath) {
     if (!VOICE_IDS.length) throw new Error("Mangler ELEVENLABS_VOICE_IDS");
     if (!OPENWEATHER_API_KEY || !LAT || !LON) throw new Error("Mangler vær-secrets");
 
-    if (!fs.existsSync(MESSAGES_FILE)) {
-      throw new Error(`Fant ikke ${MESSAGES_FILE}. Legg inn filen i repo-roten.`);
+    if (!fs.existsSync("meldinger.txt")) {
+      throw new Error("Fant ikke meldinger.txt i repo-roten.");
     }
-    const txt = fs.readFileSync(MESSAGES_FILE, "utf8");
+    const txt = fs.readFileSync("meldinger.txt", "utf8");
     const blocks = parseBlocks(txt);
 
     const { weekday, kl } = nowOslo();
     const vaer = await getWeather();
 
     const pool = blocks[weekday] || blocks["mandag"] || [];
-    if (!pool.length) throw new Error(`Fant ingen meldinger for ${weekday} i ${MESSAGES_FILE}`);
+    if (!pool.length) throw new Error(`Fant ingen meldinger for ${weekday} i meldinger.txt`);
 
-    // Meldingen kan inneholde {KLOKKA} og {VÆR}
     const raw = pick(pool);
     const msg = raw.replace("{KLOKKA}", kl).replace("{VÆR}", vaer);
 
     const voice = pick(VOICE_IDS);
+    console.log("[DEBUG] Ukedag:", weekday, "| Valgt stemme:", voice);
+    console.log("[DEBUG] Sender til ElevenLabs:", msg);
+
     await tts(voice, msg, "velkomst.mp3");
-    console.log(`✅ velkomst.mp3 generert (${JULEMODUS ? "JULEMODUS" : "vanlig"}):`, msg);
+    console.log("✅ velkomst.mp3 generert");
   } catch (e) {
     console.error("❌ Feil:", e);
     process.exit(1);
