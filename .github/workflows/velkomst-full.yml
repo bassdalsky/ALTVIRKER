@@ -1,9 +1,9 @@
-name: Render & publish (full)
+name: Velkomst (bygg)
 
 on:
   workflow_dispatch: {}
-  schedule:
-    - cron: "1 0 * * *"   # 00:01 UTC (01:01/02:01 lokalt)
+  repository_dispatch:
+    types: [velkomst-full]
 
 permissions:
   contents: read
@@ -16,9 +16,10 @@ concurrency:
 
 jobs:
   build-and-publish:
+    runs-on: ubuntu-latest
     environment:
       name: github-pages
-    runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,7 +29,10 @@ jobs:
         with:
           node-version: 20
 
-      - name: Render velkomst (mp3)
+      - name: Install (no deps, but keep ci step)
+        run: npm ci || true
+
+      - name: Bygg velkomst.mp3
         run: npm run velkomst
         env:
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
@@ -37,21 +41,11 @@ jobs:
           SKILBREI_LAT:        ${{ secrets.SKILBREI_LAT }}
           SKILBREI_LON:        ${{ secrets.SKILBREI_LON }}
           JULEMODUS:           ${{ secrets.JULEMODUS }}
-          TIMEZONE:            ${{ secrets.TIMEZONE }}
 
-      - name: Render godkveld (mp3)
-        run: npm run godkveld
-        env:
-          ELEVENLABS_API_KEY:  ${{ secrets.ELEVENLABS_API_KEY }}
-          ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
-          JULEMODUS:           ${{ secrets.JULEMODUS }}
-          TIMEZONE:            ${{ secrets.TIMEZONE }}
-
-      - name: Prepare Pages artifact
+      - name: Prepare artifact
         run: |
           mkdir -p public
-          [ -f velkomst.mp3 ] && cp velkomst.mp3 public/
-          [ -f godkveld.mp3 ] && cp godkveld.mp3 public/
+          cp velkomst.mp3 public/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
