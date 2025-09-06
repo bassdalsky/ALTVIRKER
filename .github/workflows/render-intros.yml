@@ -1,5 +1,4 @@
-name: Render & publish intros
-
+name: Render intro (once)
 on:
   workflow_dispatch: {}
 
@@ -9,61 +8,37 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: pages
   cancel-in-progress: true
 
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
-
-    # VIKTIG: GitHub Pages krever at jobben har et environment
-    environment:
-      name: github-pages
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
 
-      - name: Install deps
-        run: npm ci || npm install
+      - run: npm ci || npm i
 
-      - name: Render velkomst (mp3)
-        run: node velkomst.js
+      - name: Lag ny intro
+        run: node scripts/make_intro_now.js
         env:
-          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
           ELEVENLABS_API_KEY:  ${{ secrets.ELEVENLABS_API_KEY }}
           ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
           LANGUAGE_PRIMER:     ${{ secrets.LANGUAGE_PRIMER }}
-          SKILBREI_LAT:        ${{ secrets.SKILBREI_LAT }}
-          SKILBREI_LON:        ${{ secrets.SKILBREI_LON }}
-          JULEMODUS:           ${{ secrets.JULEMODUS }}
-
-      - name: Render godkveld (mp3) – valgfritt
-        run: node godkveld.js || echo "Hopper over godkveld.js (finnes ikke)"
-        env:
-          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
-          ELEVENLABS_API_KEY:  ${{ secrets.ELEVENLABS_API_KEY }}
-          ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
-          LANGUAGE_PRIMER:     ${{ secrets.LANGUAGE_PRIMER }}
-          SKILBREI_LAT:        ${{ secrets.SKILBREI_LAT }}
-          SKILBREI_LON:        ${{ secrets.SKILBREI_LON }}
-          JULEMODUS:           ${{ secrets.JULEMODUS }}
 
       - name: Prepare Pages artifact
         run: |
           mkdir -p public
-          [ -f velkomst.mp3 ] && cp velkomst.mp3 public/
-          [ -f godkveld.mp3 ] && cp godkveld.mp3 public/
+          cp velkomst_intro.mp3 public/ || true
+          # ta ev. med ikon/README
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: public
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: public }
 
-      - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v4
+      - uses: actions/deploy-pages@v4
+        with: { timeout: 600 }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
