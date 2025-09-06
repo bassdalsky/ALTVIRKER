@@ -1,7 +1,9 @@
-name: Render & publish velkomst (FULL)
+name: Render & publish (full)
 
 on:
   workflow_dispatch: {}
+  schedule:
+    - cron: "1 0 * * *"   # 00:01 UTC (01:01/02:01 lokalt)
 
 permissions:
   contents: read
@@ -14,6 +16,8 @@ concurrency:
 
 jobs:
   build-and-publish:
+    environment:
+      name: github-pages
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -24,24 +28,33 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install deps (ingen – men trygg fallback)
-        run: npm ci || npm install || true
-
-      - name: Bygg velkomst (FULL)
-        run: node velkomst_full.js
+      - name: Render velkomst (mp3)
+        run: npm run velkomst
         env:
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
           ELEVENLABS_API_KEY:  ${{ secrets.ELEVENLABS_API_KEY }}
           ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
-          LANGUAGE_PRIMER:     ${{ secrets.LANGUAGE_PRIMER }}
           SKILBREI_LAT:        ${{ secrets.SKILBREI_LAT }}
           SKILBREI_LON:        ${{ secrets.SKILBREI_LON }}
           JULEMODUS:           ${{ secrets.JULEMODUS }}
+          TIMEZONE:            ${{ secrets.TIMEZONE }}
+
+      - name: Render godkveld (mp3)
+        run: npm run godkveld
+        env:
+          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+          ELEVENLABS_API_KEY:  ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
+          SKILBREI_LAT:        ${{ secrets.SKILBREI_LAT }}
+          SKILBREI_LON:        ${{ secrets.SKILBREI_LON }}
+          JULEMODUS:           ${{ secrets.JULEMODUS }}
+          TIMEZONE:            ${{ secrets.TIMEZONE }}
 
       - name: Prepare Pages artifact
         run: |
           mkdir -p public
-          cp velkomst.mp3 public/
+          [ -f velkomst.mp3 ] && cp velkomst.mp3 public/
+          [ -f godkveld.mp3 ] && cp godkveld.mp3 public/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
@@ -50,7 +63,3 @@ jobs:
 
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4
-        with:
-          preview: false
-    environment:
-      name: github-pages
