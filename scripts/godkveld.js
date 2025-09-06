@@ -1,50 +1,46 @@
-// scripts/godkveld.js
-// Genererer godkveld.mp3 frå meldingsliste (nynorsk), 15–25 s.
-
 import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import fetch from "node-fetch";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname  = path.dirname(__filename);
-const MSG_DIR    = path.join(__dirname, "..", "messages");
-const OUT_FILE   = path.join(__dirname, "..", "godkveld.mp3");
+const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
+const VOICE_IDS = process.env.ELEVENLABS_VOICE_IDS.split(",");
+const LANGUAGE_PRIMER = process.env.LANGUAGE_PRIMER || "Snakk nynorsk, ikkje dansk.";
 
-const ELEVENLABS_API_KEY  = process.env.ELEVENLABS_API_KEY;
-const ELEVENLABS_VOICE_ID = (process.env.ELEVENLABS_VOICE_IDS || "").split(",")[0] || "21m00Tcm4TlvDq8ikWAM";
-const JULEMODUS = (process.env.JULEMODUS || "").toLowerCase() === "on";
-
-function linesFrom(fname) {
-  const fp = path.join(MSG_DIR, fname);
-  const txt = fs.readFileSync(fp, "utf-8");
-  return txt.split("\n").map(s=>s.trim()).filter(s=>s && !s.startsWith("#"));
+function pickRandom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
 }
-function pick(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
 
-async function tts(text, outPath) {
-  if (!ELEVENLABS_API_KEY) throw new Error("ELEVENLABS_API_KEY manglar");
-  const url = `https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_ID}?optimize_streaming_latency=0&output_format=mp3_44100_128`;
+function getMessage() {
+  const d = new Date();
+  const julemodus = process.env.JULEMODUS === "on" ||
+    (d.getMonth() === 11 || d.getMonth() === 0);
+  const file = julemodus ? "messages/meldinger_godkveld_jul.txt" : "messages/meldinger_godkveld.txt";
+  const lines = fs.readFileSync(file, "utf8").split("\n").filter(l => l.trim());
+  return pickRandom(lines);
+}
+
+async function makeMp3(text, outFile) {
+  const voice = pickRandom(VOICE_IDS);
+  const url = `https://api.elevenlabs.io/v1/text-to-speech/${voice}`;
   const res = await fetch(url, {
     method: "POST",
-    headers: { "xi-api-key": ELEVENLABS_API_KEY, "Content-Type": "application/json" },
-    body: JSON.stringify({ text, voice_settings: { stability: 0.4, similarity_boost: 0.85 } })
+    headers: {
+      "xi-api-key": ELEVENLABS_API_KEY,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      text,
+      model_id: "eleven_turbo_v2_5",
+      voice_settings: { stability: 0.7, similarity_boost: 0.8 },
+      language: "no",
+      prefill_text: LANGUAGE_PRIMER
+    }),
   });
-  if (!res.ok) {
-    const msg = await res.text();
-    throw new Error(`ElevenLabs feila ${res.status}: ${msg}`);
-  }
+
   const buf = Buffer.from(await res.arrayBuffer());
-  fs.writeFileSync(outPath, buf);
+  fs.writeFileSync(outFile, buf);
 }
 
-async function main() {
-  console.log("🚀 Byggjer godkveld.mp3 …");
-  const src = JULEMODUS ? "meldinger_godkveld_jul.txt" : "meldinger_godkveld.txt";
-  const lines = linesFrom(src);
-  const parts = [pick(lines), pick(lines), Math.random()<0.5 ? pick(lines) : ""].filter(Boolean);
-  const text = parts.join(" ").replace(/\s+/g, " ");
-  await tts(text, OUT_FILE);
-  console.log("✅ Lagde:", OUT_FILE);
-}
-
-main().catch(e => { console.error("❌ FEIL i godkveld.js:", e); process.exit(1); });
+(async () => {
+  const msg = getMessage();
+  await makeMp3(msg, "godkveld.mp3");
+})();
