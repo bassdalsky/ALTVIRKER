@@ -1,6 +1,5 @@
 // velkomst_full.js – ÉI ferdig MP3: intro -> vêr & klokke (sømlaus, nynorsk, Oslo-tid)
 
-// Node 20 har global fetch.
 import fs from "fs/promises";
 
 // ====== Secrets / miljøvariablar ======
@@ -18,37 +17,29 @@ const TZ = "Europe/Oslo";
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const VOICE_IDS = VOICE_IDS_CSV.split(/[,\s]+/).filter(Boolean);
 
-// Oslo-tid
-function nowOslo() {
-  // Konverter frå UTC-runtime til Oslo-tid
-  return new Date(new Date().toLocaleString("en-US", { timeZone: TZ }));
-}
-
+// Rett norsk tid og dag
 function timeAndDay(style = "space") {
-  const now = nowOslo();
-
-  // Ukedag på nynorsk
+  // Ukedag (nynorsk)
   const dag = new Intl.DateTimeFormat("nn-NO", {
     weekday: "long",
     timeZone: TZ,
-  }).format(now);
+  }).format(new Date());
 
-  // Klokkeslett 24t
+  // Klokkeslett (24t-format, Europe/Oslo)
   let klokke = new Intl.DateTimeFormat("nn-NO", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
     timeZone: TZ,
-  }).format(now);
+  }).format(new Date());
 
-  if (style === "space") klokke = klokke.replace(":", " ");     // "06 28"
-  else if (style === "og") klokke = klokke.replace(":", " og "); // "06 og 28"
-  // "colon" = behold "06:28"
+  if (style === "space") klokke = klokke.replace(":", " ");     
+  else if (style === "og") klokke = klokke.replace(":", " og "); 
 
   return { dag, klokke };
 }
 
-// Sett inn {DAG}, {KLOKKA}, {VÆR} om dei finst i teksten
+// Sett inn {DAG}, {KLOKKA}, {VÆR}
 function applyPlaceholders(rawText, weatherString, style = "space") {
   const { dag, klokke } = timeAndDay(style);
   return rawText
@@ -57,7 +48,7 @@ function applyPlaceholders(rawText, weatherString, style = "space") {
     .replaceAll("{VÆR}", weatherString);
 }
 
-// Les introar frå meldinger.txt (ein per linje)
+// Les introar frå meldinger.txt
 async function readIntros() {
   const txt = await fs.readFile("meldinger.txt", "utf8");
   return txt
@@ -78,7 +69,6 @@ async function getWeatherString() {
   }
   const j = await r.json();
   let desc = (j.weather?.[0]?.description || "ukjent vêr").toLowerCase();
-  // enkel nynorsking av vanlege uttrykk
   desc = desc
     .replace("overskyet", "overskya")
     .replace("delvis skyet", "delvis skya")
@@ -88,38 +78,34 @@ async function getWeatherString() {
   return `${desc}, kring ${t} grader`;
 }
 
-// Bygg endeleg tekst (intro -> ev. innsetting -> vêr/klokke hale)
+// Bygg endeleg tekst
 async function buildFullText() {
   const intros = await readIntros();
   if (!intros.length) throw new Error("meldinger.txt er tom.");
 
-  const intro = pick(intros);                 // 1) tilfeldig intro
-  const ver   = await getWeatherString();     // 2) ferskt vêr
+  const intro = pick(intros);
+  const ver   = await getWeatherString();
   const { dag, klokke } = timeAndDay(TIME_STYLE);
 
-  // Om introen allereie har plasshaldarar, fyll dei inn.
   let base = applyPlaceholders(intro, ver, TIME_STYLE);
 
-  // Viss introen ikkje nemner vêr/klokke i det heile, legg ei naturleg hale på slutten.
+  // Legg til dag/klokke/vêr om det manglar
   const lower = base.toLowerCase();
-  const manglarVer   = !lower.includes("vêr") && !lower.includes("{v");
-  const manglarKlokke = !lower.includes("klokk") && !lower.includes("{k");
-  const manglarDag    = !lower.includes("måndag") && !lower.includes("tysdag")
-    && !lower.includes("onsdag") && !lower.includes("torsdag")
-    && !lower.includes("fredag") && !lower.includes("laurdag")
-    && !lower.includes("sundag") && !lower.includes("{d");
-
   const haleParts = [];
-  if (manglarDag || manglarKlokke || manglarVer) {
-    const biter = [];
-    if (manglarDag)    biter.push(`Det er ${dag}.`);
-    if (manglarKlokke) biter.push(`Klokka er ${klokke}.`);
-    if (manglarVer)    biter.push(`Vêret no er ${ver}.`);
-    if (biter.length) haleParts.push(biter.join(" "));
+  if (!lower.includes("klokk") && !lower.includes("{k")) {
+    haleParts.push(`Klokka er ${klokke}.`);
+  }
+  if (!lower.includes("vêr") && !lower.includes("{v")) {
+    haleParts.push(`Vêret no er ${ver}.`);
+  }
+  if (!lower.includes("måndag") && !lower.includes("tysdag") &&
+      !lower.includes("onsdag") && !lower.includes("torsdag") &&
+      !lower.includes("fredag") && !lower.includes("laurdag") &&
+      !lower.includes("sundag") && !lower.includes("{d")) {
+    haleParts.push(`Det er ${dag}.`);
   }
 
-  // Liten hyggeleg hale (jul om JULEMODUS=on eller i desember)
-  const jul = JULEMODUS || (nowOslo().getMonth() === 11);
+  const jul = JULEMODUS || (new Date().getMonth() === 11);
   haleParts.push(
     jul
       ? "Og sidan det nærmar seg jul, gjer me det ekstra lunt og stemningsfullt. 🎄"
@@ -129,48 +115,6 @@ async function buildFullText() {
   return [LANGUAGE_PRIMER, base, haleParts.join(" ")].join(" ");
 }
 
-// Send tekst -> ElevenLabs (Turbo 2.5) -> skriv velkomst.mp3
+// Send tekst -> ElevenLabs -> skriv velkomst.mp3
 async function ttsToFile(text, outFile) {
-  if (!ELEVEN_API_KEY) throw new Error("Mangler ELEVENLABS_API_KEY");
-  if (!VOICE_IDS.length) throw new Error("Mangler ELEVENLABS_VOICE_IDS");
-  const voiceId = pick(VOICE_IDS);
-
-  // Stream-endepunkt gir rask respons
-  const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`;
-
-  const body = {
-    model_id: "eleven_turbo_v2_5",
-    text,
-    voice_settings: { stability: 0.5, similarity_boost: 0.75, style: 0.3, use_speaker_boost: true }
-  };
-
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "xi-api-key": ELEVEN_API_KEY,
-      "Accept": "audio/mpeg",
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!res.ok) {
-    const msg = await res.text().catch(() => "");
-    throw new Error(`ElevenLabs feil ${res.status}: ${msg}`);
-  }
-
-  const buf = Buffer.from(await res.arrayBuffer());
-  await fs.writeFile(outFile, buf);
-  console.log(`✅ Skreiv ${outFile} (${buf.length} byte) – stemme: ${voiceId}`);
-}
-
-async function main() {
-  const fullText = await buildFullText();
-  console.log("[DEBUG] Tekst til TTS:\n", fullText);
-  await ttsToFile(fullText, "velkomst.mp3");
-}
-
-main().catch(err => {
-  console.error("❌ Feil i velkomst_full:", err);
-  process.exit(1);
-});
+  if (!ELEVEN_API_KEY) throw new
