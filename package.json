@@ -1,12 +1,14 @@
 {
   "name": "altvirker",
   "version": "1.0.0",
-  "description": "Velkomst (full) – nynorsk + riktig klokke og vær",
+  "description": "Velkomst – norsk, Oslo-tid, vær og klokke, ElevenLabs Turbo 2.5",
   "type": "module",
   "scripts": {
-    "build:velkomst": "node scripts/velkomst_full.js"
+    "build:velkomst": "node velkomst_full.js"
   },
   "engines": {
     "node": ">=20"
   }
+}
+
 }
