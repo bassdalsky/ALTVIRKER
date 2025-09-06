@@ -14,6 +14,10 @@ concurrency:
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
+    # ✅ VIKTIG
+    environment:
+      name: github-pages
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -33,11 +37,12 @@ jobs:
       - name: Prepare Pages artifact
         run: |
           mkdir -p public
-          # publiser begge så Homey alltid finn dei
           [ -f velkomst_intro.mp3 ] && cp velkomst_intro.mp3 public/
           cp velkomst_tail.mp3 public/
 
       - uses: actions/upload-pages-artifact@v3
         with: { path: public }
 
-      - uses: actions/deploy-pages@v4
+      - name: Deploy to GitHub Pages
+        id: deploy      # ✅
+        uses: actions/deploy-pages@v4
