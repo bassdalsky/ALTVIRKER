@@ -42,11 +42,8 @@ jobs:
       - name: Render godkveld (mp3)
         run: npm run godkveld
         env:
-          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
           ELEVENLABS_API_KEY:  ${{ secrets.ELEVENLABS_API_KEY }}
           ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
-          SKILBREI_LAT:        ${{ secrets.SKILBREI_LAT }}
-          SKILBREI_LON:        ${{ secrets.SKILBREI_LON }}
           JULEMODUS:           ${{ secrets.JULEMODUS }}
           TIMEZONE:            ${{ secrets.TIMEZONE }}
 
