@@ -1,4 +1,5 @@
 name: Build tail (weather+time)
+
 on:
   workflow_dispatch: {}
 
@@ -14,17 +15,32 @@ concurrency:
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
-    # ✅ VIKTIG
     environment:
       name: github-pages
+    env:
+      TZ: Europe/Oslo
+      PAGES_BASE: https://bassdalsky.github.io/ALTVIRKER
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 20 }
-      - run: npm ci || npm i
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Lag tail (vær + klokke)
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install deps
+        run: npm ci || npm i
+
+      # Hent gjeldende intro fra Pages slik at den ikke forsvinner ved ny deploy
+      - name: Fetch existing intro from Pages (best effort)
+        run: |
+          curl -fL --retry 3 --connect-timeout 10 \
+            "$PAGES_BASE/velkomst_intro.mp3" \
+            -o velkomst_intro.mp3 || echo "No existing intro on Pages (ok)"
+
+      - name: Build tail (weather+clock)
         run: node scripts/build_tail.js
         env:
           ELEVENLABS_API_KEY:  ${{ secrets.ELEVENLABS_API_KEY }}
@@ -37,12 +53,15 @@ jobs:
       - name: Prepare Pages artifact
         run: |
           mkdir -p public
+          # Behold intro hvis vi fant den
           [ -f velkomst_intro.mp3 ] && cp velkomst_intro.mp3 public/
+          # Legg alltid med ny hale
           cp velkomst_tail.mp3 public/
 
-      - uses: actions/upload-pages-artifact@v3
-        with: { path: public }
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
 
       - name: Deploy to GitHub Pages
-        id: deploy      # ✅
         uses: actions/deploy-pages@v4
