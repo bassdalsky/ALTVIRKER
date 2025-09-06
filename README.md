@@ -1,31 +1,23 @@
-# 🎙️ ALTVIRKER – Velkomst & Godkveld
+# ALTVIRKER – TTS-velkomst og godkveld (nynorsk)
 
-Lagar `velkomst.mp3` og `godkveld.mp3` med ElevenLabs (norsk) + OpenWeather. Publiserer til GitHub Pages for enkel avspeling i Homey Pro / Chromecast.
+## Bygg
+- Køyre manuelt i **Actions**:
+  - **Velkomst (bygg)** → lagar `velkomst.mp3`
+  - **Godkveld (bygg)** → lagar `godkveld.mp3`
 
-## 🚀 Oppsett (GitHub)
-1. Lag nytt repo og last opp alle filene i denne mappa.
-2. Settings → Pages → Source: **GitHub Actions**.
-3. Settings → Secrets and variables → Actions → legg inn:
-   - `ELEVENLABS_API_KEY`
-   - `ELEVENLABS_VOICE_IDS` → f.eks. `xF681s0UeE04gsf0mVsJ,uNsWM1StCcpydKYOjKyu,b3jcIbyC3BSnaRu8avEk`
-   - `OPENWEATHER_API_KEY`
-   - `SKILBREI_LAT` → `61.4500`
-   - `SKILBREI_LON` → `5.8500`
-   - (valfritt) `JULEMODUS` → `on`/`off`
-   - (valfritt) `TIMEZONE` → `Europe/Oslo` (default)
+Publiserast til GitHub Pages: `https://<brukar>.github.io/<repo>/velkomst.mp3` og `.../godkveld.mp3`.
 
-## ▶️ Køyre
-- Actions → **Render & publish (full)** → Run workflow.
-- Automatisk kvar natt kl. 00:01 (kan fjernast i workflow om du vil).
+## Homey (flow)
+**Når**: Webhook "Velkommen"  
+**Så**:
+1) *HomeyScript (valfritt)*: HTTP POST → `repository_dispatch` med event `velkomst-full` (eller berre køyr workflow i Actions når du vil oppdatere).
+2) *Cast audio URL*: `https://<brukar>.github.io/<repo>/velkomst.mp3?cb=[Date Now]`
 
-## 🔗 URL-ar (bruk i Homey/Chromecast)
-- `https://<bruker>.github.io/<repo>/velkomst.mp3?cb=[Date Now]`
-- `https://<bruker>.github.io/<repo>/godkveld.mp3?cb=[Date Now]`
+Liknande for **Godkveld** med `godkveld.mp3`.
 
-`?cb=[Date Now]` tvingar bort cache.
-
-## 🛠️ Detaljar
-- Nynorsk, vennlege velkomstlinjer (20–25s) + hale med **dato, klokke og vêr**.
-- **Julemodus** automatisk 18. nov – 10. jan, eller manuelt via `JULEMODUS=on`.
-- **eleven_turbo_v2_5** for naturleg norsk (unngår dansk-preg).
-- Éin TTS-kall per fil (effektivt for kvota).
+## Secrets (Actions)
+- `ELEVENLABS_API_KEY`
+- `ELEVENLABS_VOICE_IDS` (f.eks. "21m00Tcm4TlvDq8ikWAM")
+- `OPENWEATHER_API_KEY`
+- `SKILBREI_LAT`, `SKILBREI_LON`
+- `JULEMODUS` = `ON` eller `OFF`
