@@ -33,12 +33,12 @@ jobs:
         env:
           TZ: Europe/Oslo
           ELEVENLABS_API_KEY:   ${{ secrets.ELEVENLABS_API_KEY }}
-          ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}  # f.eks Olaf,Mia,Emma
+          ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}  # Olaf,Mia,Emma
           ELEVEN_MODEL_ID:      ${{ secrets.ELEVEN_MODEL_ID }}        # eleven_turbo_v2_5
           OPENWEATHER_API_KEY:  ${{ secrets.OPENWEATHER_API_KEY }}
           SKILBREI_LAT:         ${{ secrets.SKILBREI_LAT }}
           SKILBREI_LON:         ${{ secrets.SKILBREI_LON }}
-          LANGUAGE_PRIMER:      ${{ secrets.LANGUAGE_PRIMER }}        # sett til "Hei!"
+          LANGUAGE_PRIMER:      ${{ secrets.LANGUAGE_PRIMER }}        # "Hei!"
           JULEMODUS:            ${{ secrets.JULEMODUS }}
         run: |
           node velkomst_full.js
