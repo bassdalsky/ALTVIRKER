@@ -1,10 +1,17 @@
 // velkomst_full.js
-// ÉN MP3: lang intro (~20–25 s) fra messages/* + dato/ukedag/klokke + vær.
-// Tvinger norsk (BOKMÅL) og Europe/Oslo. ElevenLabs: eleven_turbo_v2_5.
-// Stemme LÅST til Olaf (xF681s0UeE04gsf0mVsJ) – samme som da det var norsk.
+// EN MP3: lang intro (~20–25 s) fra messages/* + dato/ukedag/klokke + vær.
+// Tvinger norsk bokmål ved:
+//  - Modell: eleven_turbo_v2_5 (låst)
+//  - Stemme: Olaf (xF681s0UeE04gsf0mVsJ) (låst, ignorerer secrets)
+//  - Sterk norsk primer først i teksten
+//  - Europe/Oslo + nb-NO formatering, OpenWeather lang=no
 
 import fs from "fs";
 import path from "path";
+
+// ==== LÅSTE KONFIGER ====
+const MODEL_ID = "eleven_turbo_v2_5";
+const VOICE_ID = "xF681s0UeE04gsf0mVsJ"; // Olaf
 
 // ==== SECRETS / ENV ====
 const ELEVEN_API           = process.env.ELEVENLABS_API_KEY || "";
@@ -12,11 +19,6 @@ const OPENWEATHER_API_KEY  = process.env.OPENWEATHER_API_KEY || "";
 const LAT                  = (process.env.SKILBREI_LAT || "").trim();
 const LON                  = (process.env.SKILBREI_LON || "").trim();
 const JULEMODUS            = /^(on|true|1|yes)$/i.test(process.env.JULEMODUS || "");
-
-// ---- LÅSER alt som da det funket ----
-const MODEL_ID   = "eleven_turbo_v2_5";                  // ← dette ga norsk for deg
-const VOICE_ID   = "xF681s0UeE04gsf0mVsJ";               // ← Olaf (DIN som funket)
-const PRIMER     = (process.env.LANGUAGE_PRIMER || "Hei!").trim(); // ← "Hei!" funket
 
 // ==== KONSTANTER ====
 const TZ = "Europe/Oslo";
@@ -28,7 +30,6 @@ const OUT_MP3 = path.join(ROOT, "velkomst.mp3");
 const randPick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
 function nowOslo_nb() {
-  // Bruk NB (bokmål) for å holde modellen i norsk retning (ikke dansk)
   const d = new Date();
   const weekday = new Intl.DateTimeFormat("nb-NO", { timeZone: TZ, weekday: "long" }).format(d);
   const day     = new Intl.DateTimeFormat("nb-NO", { timeZone: TZ, day: "2-digit" }).format(d);
@@ -55,7 +56,6 @@ function safeReadLines(filePath) {
 }
 
 function weekdayFile_nb() {
-  // Map NB-ukedager til filnavn. (Støtter også nynorsk-varianter i fallback).
   const wd = new Intl.DateTimeFormat("nb-NO", { timeZone: TZ, weekday: "long" })
     .format(new Date()).toLowerCase();
 
@@ -83,8 +83,8 @@ function pickWelcomeMessage() {
   }
 
   if (!pool.length) {
-    // solid, lang fallback (~20 s) – BOKMÅL
-    return "Hjertelig velkommen! Jeg slår på lysene og gjør det hyggelig. Finn roen, senk skuldrene, og kos deg – her er alt lagt til rette for en god pause og en god start videre.";
+    // Solid, LANG fallback (~20 s) – bokmål
+    return "Hjertelig velkommen! Jeg slår på lysene og gjør det hyggelig her hjemme. Sett deg godt til rette, pust rolig ut, og kos deg – her er det varmt, vennlig og lett å lande etter en lang dag.";
   }
   return randPick(pool);
 }
@@ -128,7 +128,7 @@ async function ttsToMp3({ text, outPath }) {
 // ==== HOVED ====
 async function main() {
   const { weekday, day, month, year, time } = nowOslo_nb();
-  const intro = pickWelcomeMessage(); // lang intro (~20–25 s), fra dine messages/*
+  const intro = pickWelcomeMessage(); // lang intro (~20–25 s)
 
   let vaer = "";
   try {
@@ -138,11 +138,25 @@ async function main() {
 
   const julHilsen = isJuleperiode() ? "Riktig god jul!" : "";
 
+  // *** SUPER-NORSK PRIMER (første ord styrer språk sterkt) ***
+  // Inneholder ord, tall og tegn som modeller forbinder klart med norsk bokmål.
+  const hardPrimer = [
+    "Hei!",
+    "Dette skal leses på norsk bokmål, ikke dansk eller svensk.",
+    "Si: jeg, ikke, også, klokka, hjem, hyggelig, vær, kjøleskap, skje, sjø, øy, æ, ø, å.",
+    "Tall sies på norsk, for eksempel: tretten, tjue, trettifem, førti, femti.",
+  ].join(" ");
+
   // ÉN tekst – intro først, så oppdateringen (dato/ukedag/klokke + vær)
-  const primer = PRIMER || "Hei!"; // dette var nøkkelen til norsk hos deg
   const hale = `I dag er det ${weekday} ${day}. ${month} ${year}. Klokka er nå ${time}. ${vaer}`.trim();
 
-  const manuscript = [primer, intro, "Her kommer en liten oppdatering.", hale, julHilsen]
+  const manuscript = [
+    hardPrimer,          // ← sterk språkforankring
+    intro,
+    "Her kommer en liten oppdatering.",
+    hale,
+    julHilsen
+  ]
     .filter(Boolean)
     .join(" ")
     .replace(/\s+/g, " ");
