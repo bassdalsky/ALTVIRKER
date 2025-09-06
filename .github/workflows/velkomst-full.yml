@@ -1,4 +1,4 @@
-name: Render & publish velkomst (full)
+name: Render & publish velkomst (NO, locked voice)
 
 on:
   workflow_dispatch: {}
@@ -17,6 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,15 +30,14 @@ jobs:
       - name: Build velkomst (Turbo 2.5, Oslo-tid)
         env:
           TZ: Europe/Oslo
-          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
-          SKILBREI_LAT:       ${{ secrets.SKILBREI_LAT }}
-          SKILBREI_LON:       ${{ secrets.SKILBREI_LON }}
-          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
-          ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
-          LANGUAGE_PRIMER:    ${{ secrets.LANGUAGE_PRIMER }}   # bruk "Hei!" her om du vil
-          JULEMODUS:          ${{ secrets.JULEMODUS }}
-        run: |
-          node scripts/velkomst_full.js || node velkomst_full.js
+          ELEVENLABS_API_KEY:   ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_ID:  ${{ secrets.ELEVENLABS_VOICE_ID }}  # ← EN (norsk) ID
+          OPENWEATHER_API_KEY:  ${{ secrets.OPENWEATHER_API_KEY }}
+          SKILBREI_LAT:         ${{ secrets.SKILBREI_LAT }}
+          SKILBREI_LON:         ${{ secrets.SKILBREI_LON }}
+          LANGUAGE_PRIMER:      ${{ secrets.LANGUAGE_PRIMER }}
+          JULEMODUS:            ${{ secrets.JULEMODUS }}
+        run: npm run build:velkomst
 
       - name: Prepare Pages artifact
         run: |
