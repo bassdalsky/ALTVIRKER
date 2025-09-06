@@ -18,7 +18,6 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,21 +27,16 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install deps
-        run: npm ci || npm install
-
       - name: Build velkomst (Turbo 2.5, Oslo-tid)
         env:
-          TZ: Europe/Oslo
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
-          SKILBREI_LAT: ${{ secrets.SKILBREI_LAT }}
-          SKILBREI_LON: ${{ secrets.SKILBREI_LON }}
+          SKILBREI_LAT:       ${{ secrets.SKILBREI_LAT }}
+          SKILBREI_LON:       ${{ secrets.SKILBREI_LON }}
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
           ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
-          ELEVEN_MODEL_ID: eleven_turbo_v2_5
-          LANGUAGE_PRIMER: ${{ secrets.LANGUAGE_PRIMER }}
-          JULEMODUS: ${{ secrets.JULEMODUS }}
-        run: node velkomst_full.js
+          LANGUAGE_PRIMER:    ${{ secrets.LANGUAGE_PRIMER }}
+          JULEMODUS:          ${{ secrets.JULEMODUS }}
+        run: npm run build:velkomst
 
       - name: Prepare Pages artifact
         run: |
@@ -55,5 +49,4 @@ jobs:
           path: public
 
       - name: Deploy to GitHub Pages
-        id: deployment
         uses: actions/deploy-pages@v4
