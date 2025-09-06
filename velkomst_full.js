@@ -1,12 +1,12 @@
 // velkomst_full.js
-// Lager ÉN MP3: lang intro (~20–25s) først, deretter dato/ukedag/klokke + vær.
-// Tvinger norsk (primer "Hei!"), Eleven Turbo 2.5, og Europe/Oslo-tid.
+// ÉI MP3: lang intro (~20–25 s) først, deretter dato/ukedag/klokke + vær.
+// Tvingar norsk via primer "Hei!", brukar Eleven Turbo 2.5 og Europe/Oslo-tid.
 
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-// Tving prosess til norsk tidssone (i tillegg settes TZ i workflow)
+// Tving prosessen til Oslo-tid (i tillegg set vi TZ i workflow)
 process.env.TZ = "Europe/Oslo";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -33,9 +33,9 @@ const randPick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
 function isWithinChristmasWindow(d = new Date()) {
   const y = d.getFullYear();
-  const start = new Date(Date.UTC(y, 10, 18, 0, 0, 0));     // 18. nov
+  const start = new Date(Date.UTC(y, 10, 18, 0, 0, 0));       // 18. nov
   const end   = new Date(Date.UTC(y + 1, 0, 10, 23, 59, 59)); // 10. jan
-  return d >= start || d <= end; // håndterer årsskifte
+  return d >= start || d <= end; // handterer årsskifte
 }
 
 function weekdayFile(d = new Date()) {
@@ -63,7 +63,7 @@ function readLines(filePath) {
 }
 
 function makeIntroText(msgLines) {
-  // 2–3 linjer for å lande på ~20–25 sek
+  // 2–3 linjer for ca. 20–25 sekund
   const parts = [randPick(msgLines), randPick(msgLines)];
   if (Math.random() < 0.6) parts.push(randPick(msgLines));
   return parts.join(" ").replace(/\s+/g, " ");
@@ -95,7 +95,7 @@ async function ttsToFile({ text, outFile }) {
   const voiceId = VOICES.length ? randPick(VOICES) : "xF681s0UeE04gsf0mVsJ"; // Olaf fallback
   const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?optimize_streaming_latency=0`;
   const body = {
-    model_id: MODEL_ID,                  // ← Turbo 2.5
+    model_id: MODEL_ID, // ← Turbo 2.5
     text,
     voice_settings: { stability: 0.5, similarity_boost: 0.75 }
   };
@@ -139,7 +139,7 @@ async function main() {
   const julHilsen = useJul ? "Riktig god jul!" : "";
 
   const fullText = [
-    PRIMER,                          // ← "Hei!" tvinger norsk/nynorsk
+    PRIMER,                          // ← "Hei!" tvingar norsk/nynorsk
     intro,
     "Her kjem ei lita oppdatering.",
     `I dag er det ${weekday} den ${date}.`,
