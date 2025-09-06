@@ -1,0 +1,24 @@
+name: Render intros (one-time)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  bake:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm install node-fetch@3
+      - run: node scripts/render_intros.js
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
+          LANGUAGE_PRIMER: ${{ secrets.LANGUAGE_PRIMER }}
+      - run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add clips
+          git commit -m "Bakte introklipp frå meldinger.txt" || echo "Ingen endringer"
+          git push
