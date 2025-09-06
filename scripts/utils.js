@@ -1,74 +1,62 @@
-import fetch from "node-fetch";
+// utils.js – felles nyttefunksjonar (Node 20, ESM)
 
-// Jul: 18. nov – 10. jan
-export function isJuleperiode(now = new Date()) {
-  const y = now.getFullYear();
-  const start = new Date(`${y}-11-18T00:00:00Z`);
-  const end   = new Date(`${y + 1}-01-10T23:59:59Z`);
-  return now >= start && now <= end;
+import { writeFile } from 'node:fs/promises';
+
+// Få “no” i Europe/Oslo og ferdigformatert klokkeslett + dato (nynorsk-ish)
+export function nowOslo() {
+  const tz = 'Europe/Oslo';
+  const d = new Date();
+  const weekday = new Intl.DateTimeFormat('nn-NO', { weekday: 'long', timeZone: tz }).format(d);
+  const day    = new Intl.DateTimeFormat('nn-NO', { day: '2-digit', timeZone: tz }).format(d);
+  const month  = new Intl.DateTimeFormat('nn-NO', { month: 'long', timeZone: tz }).format(d);
+  const year   = new Intl.DateTimeFormat('nn-NO', { year: 'numeric', timeZone: tz }).format(d);
+  const time   = new Intl.DateTimeFormat('nn-NO', { hour: '2-digit', minute: '2-digit', timeZone: tz, hour12: false }).format(d);
+  return { weekday, day, month, year, time };
 }
 
-export function datoOgTid(tz = process.env.TIMEZONE || "Europe/Oslo") {
-  const now = new Date();
-  const dato = now.toLocaleDateString("nn-NO", {
-    weekday: "long", day: "numeric", month: "long", timeZone: tz
-  });
-  const tid = now.toLocaleTimeString("nn-NO", {
-    hour: "2-digit", minute: "2-digit", timeZone: tz
-  });
-  return { dato, tid };
-}
-
-export async function hentVaer() {
-  const lat = process.env.SKILBREI_LAT;
-  const lon = process.env.SKILBREI_LON;
-  const key = process.env.OPENWEATHER_API_KEY;
-  if (!lat || !lon || !key) throw new Error("Mangler lat/lon/API key til vær");
-  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${key}&units=metric&lang=no`;
+// OpenWeather – enkel nåvarsling (temp + tekst)
+export async function getWeather({ lat, lon, apiKey }) {
+  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&appid=${encodeURIComponent(apiKey)}&units=metric&lang=nn`;
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`Feil ved henting av vær: ${res.status}`);
+  if (!res.ok) throw new Error(`OpenWeather feil: ${res.status} ${await res.text()}`);
   const j = await res.json();
   const temp = Math.round(j.main?.temp ?? 0);
-  const desc = j.weather?.[0]?.description ?? "";
+  const desc = (j.weather?.[0]?.description ?? '').toLowerCase();
   return { temp, desc };
 }
 
-export function randomVoice() {
-  const list = (process.env.ELEVENLABS_VOICE_IDS || "")
-    .split(",").map(s => s.trim()).filter(Boolean);
-  if (!list.length) throw new Error("Mangler ELEVENLABS_VOICE_IDS");
-  return list[Math.floor(Math.random() * list.length)];
-}
-
-export async function lesTilfeldigLinje(filbane) {
-  const fs = await import("fs/promises");
-  const raw = await fs.readFile(filbane, "utf8");
-  const lines = raw.split("\n").map(l => l.trim()).filter(l => l && !l.startsWith("#"));
-  if (!lines.length) throw new Error(`Ingen linjer i ${filbane}`);
-  return lines[Math.floor(Math.random() * lines.length)];
-}
-
-export async function ttsElevenLabs(text, outFile) {
-  const voice = randomVoice();
-  const apiKey = process.env.ELEVENLABS_API_KEY;
-  const url = `https://api.elevenlabs.io/v1/text-to-speech/${voice}/stream`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "xi-api-key": apiKey,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model_id: "eleven_turbo_v2_5",
-      voice_settings: { stability: 0.5, similarity_boost: 0.75 },
-      text
-    })
+// Les tilfeldig melding frå ei tekstfil (1 melding per linje)
+export async function pickMessageFromFile(path) {
+  const text = await (await fetch(`file://${process.cwd()}/${path}`)).text().catch(async () => {
+    // fallback når file:// ikkje er lov: bruk fs
+    const { readFile } = await import('node:fs/promises');
+    return readFile(path, 'utf8');
   });
-  if (!res.ok) {
-    const t = await res.text();
-    throw new Error(`ElevenLabs feila: ${res.status} ${t}`);
-  }
-  const buf = Buffer.from(await res.arrayBuffer());
-  const fs = await import("fs/promises");
-  await fs.writeFile(outFile, buf);
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean).filter(l => !l.startsWith('#'));
+  if (!lines.length) throw new Error(`Tom meldingsfil: ${path}`);
+  const i = Math.floor(Math.random() * lines.length);
+  return lines[i];
+}
+
+// ElevenLabs TTS – Turbo v2.5 stream -> lagre til MP3
+export async function ttsToMp3({ apiKey, voiceId, modelId, text, outPath }) {
+  const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?optimize_streaming_latency=4&output_format=mp3_44100_128`;
+  const body = {
+    model_id: modelId || 'eleven_turbo_v2_5',
+    text,
+    voice_settings: { stability: 0.5, similarity_boost: 0.75, style: 0.3, use_speaker_boost: true }
+  };
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'xi-api-key': apiKey,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!res.ok) throw new Error(`ElevenLabs feil ${res.status}: ${await res.text()}`);
+  const buf = Buffer.from(await res.arrayBuffer());   // <-- ingen .pipe()
+  await writeFile(outPath, buf);
 }
