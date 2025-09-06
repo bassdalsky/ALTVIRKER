@@ -1,4 +1,4 @@
-name: Velkomst (bygg)
+name: Velkomst (full)
 
 on:
   workflow_dispatch: {}
@@ -29,21 +29,19 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install (no deps, but keep ci step)
-        run: npm ci || true
-
-      - name: Bygg velkomst.mp3
-        run: npm run velkomst
+      - name: Build velkomst (Turbo 2.5, Oslo-tid)
         env:
-          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
-          ELEVENLABS_API_KEY:  ${{ secrets.ELEVENLABS_API_KEY }}
-          ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
-          SKILBREI_LAT:        ${{ secrets.SKILBREI_LAT }}
-          SKILBREI_LON:        ${{ secrets.SKILBREI_LON }}
-          JULEMODUS:           ${{ secrets.JULEMODUS }}
-
-      - name: Prepare artifact
+          TZ: Europe/Oslo
+          ELEVENLABS_API_KEY:   ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}  # f.eks Olaf,Mia,Emma
+          ELEVEN_MODEL_ID:      ${{ secrets.ELEVEN_MODEL_ID }}        # eleven_turbo_v2_5
+          OPENWEATHER_API_KEY:  ${{ secrets.OPENWEATHER_API_KEY }}
+          SKILBREI_LAT:         ${{ secrets.SKILBREI_LAT }}
+          SKILBREI_LON:         ${{ secrets.SKILBREI_LON }}
+          LANGUAGE_PRIMER:      ${{ secrets.LANGUAGE_PRIMER }}        # sett til "Hei!"
+          JULEMODUS:            ${{ secrets.JULEMODUS }}
         run: |
+          node velkomst_full.js
           mkdir -p public
           cp velkomst.mp3 public/
 
