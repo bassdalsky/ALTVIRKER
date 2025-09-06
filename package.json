@@ -1,15 +1,16 @@
+
 {
   "name": "altvirker",
   "version": "1.0.0",
-  "description": "Velkomst- og godkveldprosjekt med ElevenLabs og OpenWeather",
   "type": "module",
+  "description": "Automatiske velkomst- og godkveldsmeldinger med vær, klokke og sesong (jul).",
+  "main": "velkomst.js",
   "scripts": {
-    "velkomst": "node scripts/velkomst_full.js",
-    "godkveld": "node scripts/godkveld_full.js",
-    "full": "npm run velkomst && npm run godkveld"
+    "velkomst": "node velkomst.js",
+    "godkveld": "node godkveld.js",
+    "full": "node scripts/build-full.js"
   },
   "dependencies": {
     "node-fetch": "^3.3.2"
-  },
-  "engines": { "node": ">=20.0.0" }
+  }
 }
