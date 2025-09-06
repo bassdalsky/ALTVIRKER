@@ -1,24 +1,35 @@
-name: Render intros (one-time)
+// Dispatch_Velkommen – sender dispatch til GitHub Actions
 
-on:
-  workflow_dispatch:
+const REPO_OWNER = 'bassdalsky';
+const REPO_NAME  = 'ALTVIRKER';
+const WORKFLOW   = 'velkomst-hybrid.yml';
+const BRANCH     = 'main';
 
-jobs:
-  bake:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 20 }
-      - run: npm install node-fetch@3
-      - run: node scripts/render_intros.js
-        env:
-          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
-          ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
-          LANGUAGE_PRIMER: ${{ secrets.LANGUAGE_PRIMER }}
-      - run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add clips
-          git commit -m "Bakte introklipp frå meldinger.txt" || echo "Ingen endringer"
-          git push
+// Hent GITHUB_TOKEN frå Logic → Text variable
+const vars = await Homey.logic.getVariables();
+const tokenVar = vars.find(v => v.name === 'GITHUB_TOKEN');
+if (!tokenVar) {
+  throw new Error('Fant ikke Logic-variabel GITHUB_TOKEN. Opprett en tekstvariabel i Homey Logic.');
+}
+const githubToken = tokenVar.value;
+
+const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/workflows/${WORKFLOW}/dispatches`;
+
+const res = await fetch(url, {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${githubToken}`,
+    'Accept': 'application/vnd.github+json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({ ref: BRANCH })
+});
+
+const txt = await res.text();
+if (!res.ok) {
+  console.error('❌ GitHub dispatch feila:', res.status, txt);
+  throw new Error(`GitHub ${res.status}: ${txt}`);
+}
+
+console.log('🚀 Dispatch sendt ok:', res.status);
+return true;
