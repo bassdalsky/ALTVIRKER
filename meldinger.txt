@@ -1,37 +1,49 @@
 [mandag]
-Velkommen inn i varmen! Eg slår på litt lys og systema. Klokka er {KLOKKA}, og {VÆR}. Hugs å setje ut bossdunken – elles kjem naboen til å minne deg på det med lange blikk. Ha ein god start på veka!
-Hjertelig velkommen! Eg slår på litt lys og gjer det koseleg. {VÆR}. Klokka er {KLOKKA}. I dag er det måndag, så hugs bosset. Etterpå fortener du å leggje beina på bordet og ta ein kaffe.
-Heisann og hoppsann! Eg slår på litt lys og gjer det triveleg. Klokka er {KLOKKA}, og {VÆR}. Måndag betyr boss, men hugs: du kastar søppel – ikkje humøret ditt. Ha ein fin kveld!
+# Mandag
+Hjertelig velkommen! Eg har tent lysa og gjort det lunt her inne, så du kan lande roleg etter dagen. Måndagar kan vere treige, men du er i gang no, og det er meir enn nok. Hugs papirbosset i kveld, så startar veka ryddig og grei. Finn sofahjørnet og pust ut.
 
-[tirsdag]
-Så kjekt å sjå deg! Eg slår på litt lys og systema. Klokka er {KLOKKA}, og {VÆR}. Tysdag er kanskje litt grå, men hugs – no er du berre fire dagar frå helg.
-Velkommen til meg! Eg slår på litt lys og gjer det koseleg. {VÆR}. Klokka er {KLOKKA}. Tysdag er som ein pauseknapp midt mellom måndag og onsdag – bruk han til noko du likar.
-Så hyggeleg at du kom inn her! Eg slår på litt lys og gjer det triveleg. Klokka er {KLOKKA}, og {VÆR}. Tysdag er dagen då lite skjer, men det betyr at du har fri til å gjere akkurat det du vil. Kos deg!
+Velkommen heim! Lysa blir slått på, og eg skrur opp trivselen eit lite hakk. Måndag handlar om å kome i siget, ikkje om å springe. Ta deg eit minutt, heng frå deg jakka, og la skuldrene senke seg. Hugs papirbosset – liten jobb no sparer irritasjon seinare.
 
-[onsdag]
-Hjertelig velkommen! Eg slår på litt lys og systema. Klokka er {KLOKKA}, og {VÆR}. Det er onsdag – hugs at det er ope på bossplassen på Sande frå 12:00–18:00. Etterpå kan du ta turen ned med bosset. Ha ein god dag!
-Så kjekt å sjå deg! Eg slår på litt lys og gjer det koseleg. Klokka er {KLOKKA}. Hugs at det er ope på bossplassen på Sande frå 12:00–18:00. {VÆR}. Onsdag er midt i veka, så du har lov å belønne deg sjølv med litt ekstra kos.
-Hjertelig velkommen! Eg slår på litt lys og gjer det triveleg. {VÆR}. Klokka er {KLOKKA}, og det er onsdag. Hugs bosset! Om du ikkje gjer det, får du kanskje ein ny hobby: boss-samling.
+Så kjekt å sjå deg! Eg skrur på lysa og gjer huset klart for ein mjuk start på kvelden. Måndagen er ofte full av “skal”, men her inne treng du berre å vere. Hugs papirbosset før du gløymer det, så er du ferdig. Beløning etterpå: noko godt i koppen og null hast.
 
-[torsdag]
-Hei! Velkommen inn i varmen! Eg slår på litt lys og systema. Klokka er {KLOKKA}, og {VÆR}. I dag er det torsdag – hugs bosset, og gled deg til fredagen som kjem straks.
-Så kjekt å sjå deg igjen! Eg slår på litt lys og gjer det koseleg. Klokka er {KLOKKA}, og {VÆR}. Torsdag betyr boss, men også at helga står og bankar på døra.
-Velkommen heim til den avanserte heimen! Eg slår på litt lys og gjer det triveleg. {VÆR}. Klokka er {KLOKKA}. Torsdag er kanskje ein dag du må gå ut med bosset, men trøysta er at du berre er eitt steg unna helg og taco.
+# Tysdag
+Hjertelig velkommen! Eg har slått på lysa og lagt lista lågt for resten av dagen. Tysdag er den stille motoren i veka – lite bråk, jamn framdrift. La tankane ta ein liten pause, finn deg ein stol som ikkje masar, og la det vere godt nok.
 
-[fredag]
-God helg! Eg slår på litt lys og systema. Klokka er {KLOKKA}, og {VÆR}. Fredagen er her – ta av deg skoa, sett på noko musikk og lat som om oppvasken ikkje finst.
-Hjerteleg velkommen! Eg slår på litt lys og gjer det koseleg. {VÆR}. Klokka er {KLOKKA}. Fredag betyr helg, og helg betyr kos – kanskje ein film, kanskje ein pizza, kanskje begge delar.
-Velkommen inn til den smarte heimen! Eg slår på litt lys og gjer det triveleg. Klokka er {KLOKKA}, og {VÆR}. Fredag gjer alle litt gladare – bortsett frå støvsugaren, som veit at han ikkje får jobbe i dag.
+Velkommen inn! Lysa er tent, og stemninga får jobbe for deg. Tysdag treng ikkje store planar; litt orden, litt mat, litt ro. Om du vil, sett på noko du likar i bakgrunnen, og la resten vente. Små steg er også steg, og i dag held det lenge.
 
-[laurdag]
-Velkommen inn i varmen! Eg slår på litt lys og systema. Klokka er {KLOKKA}, og {VÆR}. Laurdag betyr fritid – tid for å gjere akkurat det DU har lyst til. Kanskje ein tur ut, eller berre sofakos med noko godt i skåla.
-Så kjekt å sjå deg igjen! Eg slår på litt lys og gjer det koseleg. {VÆR}. Klokka er {KLOKKA}. Laurdag er dagen for å kose seg ekstra mykje – sett på ein film, inviter nokon på besøk, eller berre nyt stillheita.
-Hjertelig velkommen! Eg slår på litt lys og gjer det triveleg. Klokka er {KLOKKA}. {VÆR}. Laurdag er fridagen over alle – perfekt for god mat, litt latter, og kanskje eit lite eventyr. Kos deg maks!
+Heisann! Eg skrur på lysa og skapar ei god ramme for ein roleg kveld. Tysdag er den underskattte kviledagen – midt mellom ambisjonar. Gjer noko lite som gjer deg glad: send ei melding, høyr ein låt, rett ryggen og smil litt. Det er lov å ta det piano.
 
-[søndag]
-Hjertelig velkommen! Eg slår på litt lys og systema. Klokka er {KLOKKA}, og {VÆR}. Hugs papirbosset – elles kjem naboen til å minne deg på det med lange blikk. Ha ein riktig fin søndag!
-Heisann, velkommen inn! Eg slår på litt lys og gjer det koseleg. Klokka er {KLOKKA}. {VÆR}. Søndag er dagen då alt går litt sakte – akkurat slik det skal vere. Kos deg! Hugs papirbosset, og ha ein super søndag!
-Så kjekt å sjå deg! Eg slår på litt lys og gjer det triveleg. {VÆR}. Klokka er {KLOKKA}. Søndag betyr ro, men hugs papirbosset – og i morgon er det måndag igjen. Nyt dagen dobbelt så mykje!
+# Onsdag
+Hjertelig velkommen! Lysa blir slått på, og huset legg seg på mjuk modus. Onsdag er midt i veka – godt å vere over kneika. Hugs at bossplassen på Sande er open frå 12 til 18 om du vil kvitte deg med noko. Etterpå kan du klappe deg sjølv på skuldra.
 
+Velkommen heim! Eg har tent lysa og sett saktefart på resten. Onsdag kan få vere ein liten reset: rydd ein flate, pust fem gongar, kjenn at det hjelper. Om du har noko som skal bort, er Sande open 12–18 i dag. Ta turen, og kom heim til ryddig ro.
 
+Så kjekt å sjå deg! Lysa blinkar ikkje, men dei smilar litt – for no er du heime. Onsdag er perfekt for små justeringar: litt vasking her, litt sløving der. Treng du kvitte noko, hugs Sande 12–18. Gjer det enkelt, gjer det lett, og ver nøgd med det.
 
+# Torsdag
+Hjertelig velkommen! Eg skrur på lysa og gjer det koseleg på ordentleg. Torsdag er varm-opp til helga: litt å gjere, mykje å glede seg til. Hugs å ta ned bosspannet i kveld, så slepp du morgonstress. Etterpå: sofatar tid og eit lite smil til deg sjølv.
+
+Velkommen inn! Lysa er tent, og tempoet kan gjerne vere lavt. Torsdag er flott for praktiske småting – to minutt her og der, så kjennest alt betre. Hugs å ta ned bosspannet; det er den vesle handlinga som sparer store sukk. Resten av kvelden er din.
+
+Heisann! Eg har slått på lysa og sett stemninga i gang. Torsdag kan få vere ei myk bru mot helga. Ta ned bosspannet i kveld, så er du føre var. Gjer noko enkelt og fint for deg sjølv etterpå: varm drikke, roleg musikk, null krav. Det held i massevis.
+
+# Fredag
+Hjertelig velkommen! Lysa blir tent, og helgestemninga snik seg inn døra. Fredag handlar om å lande elegant etter veka. Plasser alt du ikkje treng i ein mental skuff, og la skuldrene finne naturleg høgde. Ein liten plan for kvelden er lov: noko godt og lett.
+
+Velkommen heim! Eg skrur på lysa og heiser eit lite flagg for helga. La rytmen gå sakte, og gjer plass til det du faktisk har lyst til. Litt musikk, litt mat, litt latter – mykje betre enn “må”. Dagen er din, og tempoet bestemmer du heilt sjølv.
+
+Så kjekt å sjå deg! Lysa er på, og fredagslufta er ekstra mjuk. Tenk: no er du gjennom, og det er lov å vere stolt. Finn fram noko enkelt, pakk veka bort, og la tankane få fri. Om du vil, inviter helga inn med eit smil og ein veldig komfortabel stol.
+
+# Laurdag
+Hjertelig velkommen! Eg har tent lysa og sett huset i helgemodus. Laurdag er fridag med blanke felt – du bestemmer fargane. Kanskje ein tur ut, kanskje ingenting, kanskje akkurat passe. Det viktigaste er at det kjennest godt. Gje deg sjølv lov til å nyte.
+
+Velkommen inn! Lysa blir slått på, og dagen kan gå i mjuke steg. Laurdag tåler både effektivitet og sløving – du vel balansen. Lag deg noko godt, ta det sakte, og lat tida vere litt romsleg. Ingen forventar storverk; eit godt pust er meir enn nok.
+
+Heisann! Eg skrur på lysa og let humøret få litt plass. Laurdag inviterer til små eventyr: ei bok, ei rute du ikkje har gått, eller berre den beste sofakroken. Varmt teppe, varm kopp, varmt blikk – resten ordnar seg som regel heilt fint.
+
+# Søndag
+Hjertelig velkommen! Lysa er tent, og søndagsfreden får sleppe til. Søndag er perfekt for ettertankar i små porsjonar. Hugs papirbosset i dag, så startar veka lettare. Gjer noko roleg du likar: set på musikk, strekk litt, lat skuldrene synke. Du er i rute.
+
+Velkommen heim! Eg slår på lysa og skruvar ned tempoet på alt anna. Søndag treng ikkje program; berre gode val i sakte rekkefølgje. Hugs papirbosset før kvelden tek over, så kan du la resten av dagen vere mjuk. Ein liten tur ut, eller berre innandørs ro.
+
+Så kjekt å sjå deg! Lysa blir slått på, og stilla får vinne litt. Søndag er ein fin stad å puste – langt frå “må”, nær “vil”. Ta papirbosset i dag, så takkar morgondagen deg. Etterpå er det lov å gjere ingenting med god samvit – og det er ganske mykje.
