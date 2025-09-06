@@ -1,30 +1,21 @@
-// velkomst_full.js
-// ÉN MP3: lang, vennlig intro (~20–25 s) fra messages/* + dato/ukedag/klokke + vær.
-// Låst til: norsk (bokmål), Europe/Oslo, ElevenLabs Turbo 2.5, ÉN spesifikk norsk voice.
-// NB: Meldinger ligger i messages/*.txt (du har dem allerede).
-
 import fs from "fs";
 import path from "path";
 
-// ====== ENV / SECRETS ======
 const ELEVEN_API          = process.env.ELEVENLABS_API_KEY || "";
-const VOICE_ID            = (process.env.ELEVENLABS_VOICE_ID || "").trim(); // ← EN (norsk) ID
-const MODEL_ID            = "eleven_turbo_v2_5"; // låst – ga norsk for deg
+const VOICE_ID            = (process.env.ELEVENLABS_VOICE_ID || "").trim();
+const MODEL_ID            = "eleven_turbo_v2_5";
 const LANGUAGE_PRIMER     = (process.env.LANGUAGE_PRIMER || "Hei! Dette skal leses på norsk bokmål.").trim();
 
 const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY || "";
 const LAT                 = (process.env.SKILBREI_LAT || "").trim();
 const LON                 = (process.env.SKILBREI_LON || "").trim();
-
 const JULEMODUS           = /^(on|true|1|yes)$/i.test(process.env.JULEMODUS || "");
 
-// ====== KONSTANTER ======
 const TZ      = "Europe/Oslo";
 const ROOT    = process.cwd();
 const MSG_DIR = path.join(ROOT, "messages");
 const OUT_MP3 = path.join(ROOT, "velkomst.mp3");
 
-// ====== HJELP ======
 const randPick = a => a[Math.floor(Math.random() * a.length)];
 
 function nowOslo_nb() {
@@ -40,8 +31,8 @@ function nowOslo_nb() {
 function isJuleperiode() {
   const d = new Date();
   const y = d.getFullYear();
-  const start = new Date(Date.UTC(y, 10, 18, 0, 0, 0));      // 18. nov
-  const end   = new Date(Date.UTC(y+1, 0, 10, 23, 59, 59));  // 10. jan
+  const start = new Date(Date.UTC(y, 10, 18, 0, 0, 0));
+  const end   = new Date(Date.UTC(y+1, 0, 10, 23, 59, 59));
   return (d >= start || d <= end) || JULEMODUS;
 }
 
@@ -56,7 +47,6 @@ function safeReadLines(filePath) {
 function weekdayFile_nb() {
   const wd = new Intl.DateTimeFormat("nb-NO", { timeZone: TZ, weekday: "long" })
     .format(new Date()).toLowerCase();
-
   const map = {
     "mandag":  "meldinger_mandag.txt",  "måndag": "meldinger_mandag.txt",
     "tirsdag": "meldinger_tysdag.txt",  "tysdag": "meldinger_tysdag.txt",
@@ -71,17 +61,13 @@ function weekdayFile_nb() {
 
 function pickWelcomeMessage() {
   const jul = isJuleperiode();
-  const dayFile = path.join(MSG_DIR, weekdayFile_nb());
-  const base = safeReadLines(dayFile);
+  const base = safeReadLines(path.join(MSG_DIR, weekdayFile_nb()));
   let pool = base.length ? base : safeReadLines(path.join(MSG_DIR, "meldinger_vanleg.txt"));
-
   if (jul) {
     const julLines = safeReadLines(path.join(MSG_DIR, "meldinger_jul.txt"));
-    pool = pool.concat(julLines, julLines); // boost jul i perioden
+    pool = pool.concat(julLines, julLines);
   }
-
   if (!pool.length) {
-    // solid, lang fallback (~20 s) – bokmål
     return "Hjertelig velkommen hjem! Jeg slår på lysene og gjør det hyggelig. Sett deg godt til rette, pust rolig ut og land litt – her er det varmt, vennlig og klart for en god kveld.";
   }
   return randPick(pool);
@@ -91,63 +77,46 @@ async function getWeather_nb() {
   if (!OPENWEATHER_API_KEY || !LAT || !LON) return null;
   const url = `https://api.openweathermap.org/data/2.5/weather?lat=${encodeURIComponent(LAT)}&lon=${encodeURIComponent(LON)}&appid=${encodeURIComponent(OPENWEATHER_API_KEY)}&units=metric&lang=no`;
   const res = await fetch(url);
-  if (!res.ok) {
-    console.warn("OpenWeather:", res.status, await res.text());
-    return null;
-  }
+  if (!res.ok) { console.warn("OpenWeather:", res.status, await res.text()); return null; }
   const j = await res.json();
   const temp = Math.round(j.main?.temp ?? 0);
   const desc = (j.weather?.[0]?.description || "").toLowerCase();
   return { temp, desc };
 }
 
-// ElevenLabs – arrayBuffer → fil (fiks i Actions)
 async function ttsToMp3({ text, outPath }) {
   if (!ELEVEN_API) throw new Error("Mangler ELEVENLABS_API_KEY");
   if (!VOICE_ID)   throw new Error("Mangler ELEVENLABS_VOICE_ID (må være EN norsk ID)");
   const url = `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}/stream?optimize_streaming_latency=4&output_format=mp3_44100_128`;
-
   const body = {
     model_id: MODEL_ID,
     text,
     voice_settings: { stability: 0.5, similarity_boost: 0.75, style: 0.3, use_speaker_boost: true }
   };
-
   const res = await fetch(url, {
     method: "POST",
     headers: { "xi-api-key": ELEVEN_API, "Content-Type": "application/json" },
     body: JSON.stringify(body)
   });
   if (!res.ok) throw new Error(`ElevenLabs: ${res.status} ${await res.text()}`);
-
   const buf = Buffer.from(await res.arrayBuffer());
   fs.writeFileSync(outPath, buf);
 }
 
-// ====== HOVED ======
 async function main() {
   const { weekday, day, month, year, time } = nowOslo_nb();
-  const intro = pickWelcomeMessage(); // lang intro (~20–25 s)
-
+  const intro = pickWelcomeMessage();
   let vaer = "";
   try {
     const w = await getWeather_nb();
     if (w) vaer = `Ute er det ${w.desc}, omtrent ${w.temp} grader.`;
   } catch (e) { console.warn("Vær-feil:", e.message); }
-
   const julHilsen = isJuleperiode() ? "Riktig god jul!" : "";
-
-  // ÉN tekst – intro først, så oppdatering (dato/ukedag/klokke + vær)
-  const primer = LANGUAGE_PRIMER; // f.eks. "Hei! Dette skal leses på norsk bokmål."
+  const primer = LANGUAGE_PRIMER;
   const hale = `I dag er det ${weekday} ${day}. ${month} ${year}. Klokka er nå ${time}. ${vaer}`.trim();
-
   const manuscript = [primer, intro, "Her kommer en liten oppdatering.", hale, julHilsen]
-    .filter(Boolean)
-    .join(" ")
-    .replace(/\s+/g, " ");
-
+    .filter(Boolean).join(" ").replace(/\s+/g, " ");
   await ttsToMp3({ text: manuscript, outPath: OUT_MP3 });
   console.log("✅ Lagret:", OUT_MP3);
 }
-
 main().catch(err => { console.error("❌ Feil:", err); process.exit(1); });
