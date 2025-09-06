@@ -1,62 +1,47 @@
-// utils.js – felles nyttefunksjonar (Node 20, ESM)
+// utils.js – felles hjelp
+import { format } from 'date-fns';
+import { utcToZonedTime } from 'date-fns-tz';
 
-import { writeFile } from 'node:fs/promises';
+// Nynorsk ukedagar / månader
+const WEEKDAYS = ['sundag', 'måndag', 'tysdag', 'onsdag', 'torsdag', 'fredag', 'laurdag'];
 
-// Få “no” i Europe/Oslo og ferdigformatert klokkeslett + dato (nynorsk-ish)
 export function nowOslo() {
   const tz = 'Europe/Oslo';
-  const d = new Date();
-  const weekday = new Intl.DateTimeFormat('nn-NO', { weekday: 'long', timeZone: tz }).format(d);
-  const day    = new Intl.DateTimeFormat('nn-NO', { day: '2-digit', timeZone: tz }).format(d);
-  const month  = new Intl.DateTimeFormat('nn-NO', { month: 'long', timeZone: tz }).format(d);
-  const year   = new Intl.DateTimeFormat('nn-NO', { year: 'numeric', timeZone: tz }).format(d);
-  const time   = new Intl.DateTimeFormat('nn-NO', { hour: '2-digit', minute: '2-digit', timeZone: tz, hour12: false }).format(d);
-  return { weekday, day, month, year, time };
+  const d = utcToZonedTime(new Date(), tz);
+  return { d, tz };
 }
 
-// OpenWeather – enkel nåvarsling (temp + tekst)
-export async function getWeather({ lat, lon, apiKey }) {
-  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&appid=${encodeURIComponent(apiKey)}&units=metric&lang=nn`;
+export function formatClockDateNN(d) {
+  const weekday = WEEKDAYS[d.getDay()];
+  const hhmm = format(d, 'HH:mm');
+  const dd = format(d, 'd');
+  const month = format(d, 'LLLL', { locale: undefined }); // system locale, funker på runner
+  return { weekday, clock: hhmm, dateText: `${dd}. ${month}` };
+}
+
+export function isJulPerDate(d) {
+  const year = d.getFullYear();
+  const start = new Date(`${year}-11-18T00:00:00+01:00`);
+  const end = new Date(`${year + 1}-01-10T23:59:59+01:00`);
+  return d >= start || d <= end;
+}
+
+export function pickRandom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+export async function fetchWeather({ lat, lon, apiKey }) {
+  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&appid=${encodeURIComponent(apiKey)}&units=metric&lang=no`;
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`OpenWeather feil: ${res.status} ${await res.text()}`);
+  if (!res.ok) throw new Error(`OpenWeather feila: ${res.status} ${await res.text()}`);
   const j = await res.json();
   const temp = Math.round(j.main?.temp ?? 0);
+  const feels = Math.round(j.main?.feels_like ?? temp);
   const desc = (j.weather?.[0]?.description ?? '').toLowerCase();
-  return { temp, desc };
+  return { temp, feels, desc };
 }
 
-// Les tilfeldig melding frå ei tekstfil (1 melding per linje)
-export async function pickMessageFromFile(path) {
-  const text = await (await fetch(`file://${process.cwd()}/${path}`)).text().catch(async () => {
-    // fallback når file:// ikkje er lov: bruk fs
-    const { readFile } = await import('node:fs/promises');
-    return readFile(path, 'utf8');
-  });
-  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean).filter(l => !l.startsWith('#'));
-  if (!lines.length) throw new Error(`Tom meldingsfil: ${path}`);
-  const i = Math.floor(Math.random() * lines.length);
-  return lines[i];
-}
-
-// ElevenLabs TTS – Turbo v2.5 stream -> lagre til MP3
-export async function ttsToMp3({ apiKey, voiceId, modelId, text, outPath }) {
-  const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?optimize_streaming_latency=4&output_format=mp3_44100_128`;
-  const body = {
-    model_id: modelId || 'eleven_turbo_v2_5',
-    text,
-    voice_settings: { stability: 0.5, similarity_boost: 0.75, style: 0.3, use_speaker_boost: true }
-  };
-
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'xi-api-key': apiKey,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(body)
-  });
-
-  if (!res.ok) throw new Error(`ElevenLabs feil ${res.status}: ${await res.text()}`);
-  const buf = Buffer.from(await res.arrayBuffer());   // <-- ingen .pipe()
-  await writeFile(outPath, buf);
+export function buildTailNN({ weekday, clock, dateText, weather }) {
+  const w = weather ? ` Vêret er ${weather.desc}, temperaturen er ${weather.temp}° og kjennest som ${weather.feels}°.` : '';
+  return ` Klokka er ${clock}, ${weekday} ${dateText}.${w}`;
 }
