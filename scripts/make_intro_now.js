@@ -1,62 +1,46 @@
-// scripts/make_intro_now.js
-import { readFile, writeFile } from "fs/promises";
+import fs from "fs/promises";
+import fetch from "node-fetch";
 
-const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
-const VOICES = (process.env.ELEVENLABS_VOICE_IDS || "")
-  .split(",").map(s=>s.trim()).filter(Boolean);
-const LANGUAGE_PRIMER = process.env.LANGUAGE_PRIMER || "Hei! Dette er en norsk melding.";
+const ELEVEN_API = "https://api.elevenlabs.io/v1/text-to-speech";
+const VOICES = (process.env.ELEVENLABS_VOICE_IDS || "").split(",").map(s=>s.trim()).filter(Boolean);
+const API_KEY = process.env.ELEVENLABS_API_KEY;
+const PRIMER  = process.env.LANGUAGE_PRIMER || "Hei! Dette er ei norsk melding.";
 
-if (!ELEVENLABS_API_KEY) throw new Error("Mangler ELEVENLABS_API_KEY");
-if (!VOICES.length) throw new Error("Mangler ELEVENLABS_VOICE_IDS");
-
-function weekday() {
-  const tz = "Europe/Oslo";
-  return new Date().toLocaleDateString("no-NO",{weekday:"long", timeZone:tz}).toLowerCase();
+if (!API_KEY || VOICES.length === 0) {
+  throw new Error("Mangler ELEVENLABS_API_KEY eller ELEVENLABS_VOICE_IDS");
 }
-function normalizeDay(s) {
-  const x = s.toLowerCase().normalize("NFKD").replace(/[^\w]/g,"");
-  if (x.startsWith("mandag")) return "mandag";
-  if (x.startsWith("tysdag") || x.startsWith("tirsdag")) return "tirsdag";
-  if (x.startsWith("onsdag")) return "onsdag";
-  if (x.startsWith("torsdag")) return "torsdag";
-  if (x.startsWith("fredag")) return "fredag";
-  if (x.startsWith("lordag") || x.startsWith("laurdag") || x.startsWith("lørdag")) return "lørdag";
-  if (x.startsWith("sondag") || x.startsWith("søndag")) return "søndag";
-  return "mandag";
-}
-function parsePools(txt) {
-  const pools = { mandag:[], tirsdag:[], onsdag:[], torsdag:[], fredag:[], lørdag:[], søndag:[] };
-  const lines = txt.split(/\r?\n/);
-  let cur=null, buf=[];
-  const flush=()=>{ const c=buf.join("\n").trim(); if(cur&&c){ pools[cur].push(...c.split(/\n\s*\n/).map(s=>s.trim()).filter(Boolean)); } buf=[]; };
-  for (const raw of lines) {
-    const line = raw.trim();
-    const h = line.match(/^#\s*([A-Za-zæøåÆØÅ\- ]+)\s*$/) || line.match(/^\[([A-Za-zæøåÆØÅ\- ]+)\]\s*$/);
-    if (h) { flush(); cur = normalizeDay(h[1]); continue; }
-    if (cur) buf.push(raw);
-  }
-  flush();
-  return pools;
-}
-function pick(a){ return a[Math.floor(Math.random()*a.length)] }
 
-const txt = await readFile("meldinger.txt","utf8");
-const pools = parsePools(txt);
-const day = normalizeDay(weekday());
-const pool = pools[day]?.length ? pools[day] : pools["mandag"];
-const message = pick(pool).replace(/\{KLOKKA\}|\{VÆR\}/g,"").replace(/\s+/g," ").trim();
+function pickRandom(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 
-const voice = pick(VOICES);
-const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}`,{
-  method:"POST",
-  headers:{
-    "Accept":"audio/mpeg",
-    "Content-Type":"application/json",
-    "xi-api-key": ELEVENLABS_API_KEY
-  },
-  body: JSON.stringify({ model_id:"eleven_turbo_v2_5", text: `${LANGUAGE_PRIMER} ${message}` })
-});
-if (!res.ok) throw new Error(`ElevenLabs feil (${res.status}): ${await res.text()}`);
-const buf = Buffer.from(await res.arrayBuffer());
-await writeFile("intro_now.mp3", buf);
-console.log("✅ Skapte intro_now.mp3 (fallback)");
+async function pickIntroText() {
+  const raw = await fs.readFile("meldinger.txt", "utf8");
+  const lines = raw.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+  // plukk tilfeldig – du kan redigere meldinger.txt fritt
+  return pickRandom(lines);
+}
+
+async function tts(text, outFile) {
+  const voice = pickRandom(VOICES);
+  const res = await fetch(`${ELEVEN_API}/${voice}`, {
+    method: "POST",
+    headers: {
+      "xi-api-key": API_KEY,
+      "accept": "audio/mpeg",
+      "content-type": "application/json"
+    },
+    body: JSON.stringify({
+      model_id: "eleven_turbo_v2_5",
+      voice_settings: { stability: 0.6, similarity_boost: 0.7, style: 0.4, use_speaker_boost: true },
+      text: `${PRIMER} ${text}`
+    })
+  });
+  if (!res.ok) throw new Error(`ElevenLabs intro feila (${res.status}) ${await res.text()}`);
+  const buf = Buffer.from(await res.arrayBuffer());
+  await fs.writeFile(outFile, buf);
+}
+
+(async () => {
+  const txt = await pickIntroText();
+  await tts(txt, "velkomst_intro.mp3");
+  console.log("✅ Intro OK");
+})();
