@@ -9,12 +9,17 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: "pages"
   cancel-in-progress: true
 
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
+
+    # VIKTIG: GitHub Pages krever at jobben har et environment
+    environment:
+      name: github-pages
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -39,7 +44,7 @@ jobs:
           JULEMODUS:           ${{ secrets.JULEMODUS }}
 
       - name: Render godkveld (mp3) – valgfritt
-        run: node godkveld.js || echo "hopper over (ingen godkveld.js)"
+        run: node godkveld.js || echo "Hopper over godkveld.js (finnes ikke)"
         env:
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
           ELEVENLABS_API_KEY:  ${{ secrets.ELEVENLABS_API_KEY }}
