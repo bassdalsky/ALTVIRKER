@@ -1,13 +1,13 @@
-
 {
   "name": "altvirker",
   "version": "1.0.0",
-  "description": "Velkomst – norsk, Oslo-tid, vær og klokke, ElevenLabs Turbo 2.5",
+  "description": "Velkomst + vær (Nynorsk) med ElevenLabs og GitHub Pages",
   "type": "module",
   "scripts": {
-    "build:velkomst": "node velkomst_full.js"
+    "build:velkomst:full": "node scripts/velkomst_full.js"
   },
-  "engines": {
-    "node": ">=20"
+  "dependencies": {
+    "date-fns": "^3.6.0",
+    "date-fns-tz": "^3.0.0"
   }
 }
