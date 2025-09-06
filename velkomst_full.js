@@ -4,7 +4,7 @@ import fs from "fs/promises";
 
 // ====== Secrets / miljøvariablar ======
 const ELEVEN_API_KEY  = process.env.ELEVENLABS_API_KEY;
-const VOICE_IDS_CSV   = process.env.ELEVENLABS_VOICE_IDS || ""; // kommaseparert liste
+const VOICE_IDS_CSV   = process.env.ELEVENLABS_VOICE_IDS || "";
 const LANGUAGE_PRIMER = process.env.LANGUAGE_PRIMER || "Hei! Dette er ei norsk melding på nynorsk.";
 const OW_KEY          = process.env.OPENWEATHER_API_KEY;
 const LAT             = process.env.SKILBREI_LAT;
@@ -17,24 +17,26 @@ const TZ = "Europe/Oslo";
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const VOICE_IDS = VOICE_IDS_CSV.split(/[,\s]+/).filter(Boolean);
 
-// Rett norsk tid og dag
+// Rett Oslo-tid
 function timeAndDay(style = "space") {
+  const opts = { timeZone: TZ };
+
   // Ukedag (nynorsk)
   const dag = new Intl.DateTimeFormat("nn-NO", {
     weekday: "long",
-    timeZone: TZ,
+    ...opts,
   }).format(new Date());
 
-  // Klokkeslett (24t-format, Europe/Oslo)
+  // Klokkeslett
   let klokke = new Intl.DateTimeFormat("nn-NO", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-    timeZone: TZ,
+    ...opts,
   }).format(new Date());
 
-  if (style === "space") klokke = klokke.replace(":", " ");     
-  else if (style === "og") klokke = klokke.replace(":", " og "); 
+  if (style === "space") klokke = klokke.replace(":", " ");
+  else if (style === "og") klokke = klokke.replace(":", " og ");
 
   return { dag, klokke };
 }
@@ -57,7 +59,7 @@ async function readIntros() {
     .filter(s => s && !s.startsWith("#"));
 }
 
-// Vêr (kort, nynorskjustert)
+// Hent vêr
 async function getWeatherString() {
   if (!OW_KEY || !LAT || !LON) return "vêret er ukjent akkurat no";
   const url = `https://api.openweathermap.org/data/2.5/weather?lat=${LAT}&lon=${LON}&appid=${OW_KEY}&lang=no&units=metric`;
@@ -78,7 +80,7 @@ async function getWeatherString() {
   return `${desc}, kring ${t} grader`;
 }
 
-// Bygg endeleg tekst
+// Bygg tekst
 async function buildFullText() {
   const intros = await readIntros();
   if (!intros.length) throw new Error("meldinger.txt er tom.");
@@ -89,20 +91,21 @@ async function buildFullText() {
 
   let base = applyPlaceholders(intro, ver, TIME_STYLE);
 
-  // Legg til dag/klokke/vêr om det manglar
   const lower = base.toLowerCase();
+  const manglarVer    = !lower.includes("vêr") && !lower.includes("{v");
+  const manglarKlokke = !lower.includes("klokk") && !lower.includes("{k");
+  const manglarDag    = !lower.includes("måndag") && !lower.includes("tysdag")
+    && !lower.includes("onsdag") && !lower.includes("torsdag")
+    && !lower.includes("fredag") && !lower.includes("laurdag")
+    && !lower.includes("sundag") && !lower.includes("{d");
+
   const haleParts = [];
-  if (!lower.includes("klokk") && !lower.includes("{k")) {
-    haleParts.push(`Klokka er ${klokke}.`);
-  }
-  if (!lower.includes("vêr") && !lower.includes("{v")) {
-    haleParts.push(`Vêret no er ${ver}.`);
-  }
-  if (!lower.includes("måndag") && !lower.includes("tysdag") &&
-      !lower.includes("onsdag") && !lower.includes("torsdag") &&
-      !lower.includes("fredag") && !lower.includes("laurdag") &&
-      !lower.includes("sundag") && !lower.includes("{d")) {
-    haleParts.push(`Det er ${dag}.`);
+  if (manglarDag || manglarKlokke || manglarVer) {
+    const biter = [];
+    if (manglarDag)    biter.push(`Det er ${dag}.`);
+    if (manglarKlokke) biter.push(`Klokka er ${klokke}.`);
+    if (manglarVer)    biter.push(`Vêret no er ${ver}.`);
+    if (biter.length) haleParts.push(biter.join(" "));
   }
 
   const jul = JULEMODUS || (new Date().getMonth() === 11);
@@ -115,6 +118,47 @@ async function buildFullText() {
   return [LANGUAGE_PRIMER, base, haleParts.join(" ")].join(" ");
 }
 
-// Send tekst -> ElevenLabs -> skriv velkomst.mp3
+// TTS via ElevenLabs Turbo 2.5
 async function ttsToFile(text, outFile) {
-  if (!ELEVEN_API_KEY) throw new
+  if (!ELEVEN_API_KEY) throw new Error("Mangler ELEVENLABS_API_KEY");
+  if (!VOICE_IDS.length) throw new Error("Mangler ELEVENLABS_VOICE_IDS");
+  const voiceId = pick(VOICE_IDS);
+
+  const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`;
+
+  const body = {
+    model_id: "eleven_turbo_v2_5",
+    text,
+    voice_settings: { stability: 0.5, similarity_boost: 0.75, style: 0.3, use_speaker_boost: true }
+  };
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "xi-api-key": ELEVEN_API_KEY,
+      "Accept": "audio/mpeg",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const msg = await res.text().catch(() => "");
+    throw new Error(`ElevenLabs feil ${res.status}: ${msg}`);
+  }
+
+  const buf = Buffer.from(await res.arrayBuffer());
+  await fs.writeFile(outFile, buf);
+  console.log(`✅ Skreiv ${outFile} (${buf.length} byte) – stemme: ${voiceId}`);
+}
+
+async function main() {
+  const fullText = await buildFullText();
+  console.log("[DEBUG] Tekst til TTS:\n", fullText);
+  await ttsToFile(fullText, "velkomst.mp3");
+}
+
+main().catch(err => {
+  console.error("❌ Feil i velkomst_full:", err);
+  process.exit(1);
+});
