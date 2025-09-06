@@ -31,7 +31,7 @@ jobs:
         env:
           TZ: Europe/Oslo
           ELEVENLABS_API_KEY:   ${{ secrets.ELEVENLABS_API_KEY }}
-          ELEVENLABS_VOICE_ID:  ${{ secrets.ELEVENLABS_VOICE_ID }}  # ← EN (norsk) ID
+          ELEVENLABS_VOICE_ID:  ${{ secrets.ELEVENLABS_VOICE_ID }}
           OPENWEATHER_API_KEY:  ${{ secrets.OPENWEATHER_API_KEY }}
           SKILBREI_LAT:         ${{ secrets.SKILBREI_LAT }}
           SKILBREI_LON:         ${{ secrets.SKILBREI_LON }}
