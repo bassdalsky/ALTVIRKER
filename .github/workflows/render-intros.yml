@@ -14,12 +14,14 @@ concurrency:
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
+    # ✅ VIKTIG: Pages trenger environment=github-pages
+    environment:
+      name: github-pages
+
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
-
       - run: npm ci || npm i
 
       - name: Lag ny intro
@@ -33,12 +35,10 @@ jobs:
         run: |
           mkdir -p public
           cp velkomst_intro.mp3 public/ || true
-          # ta ev. med ikon/README
 
       - uses: actions/upload-pages-artifact@v3
         with: { path: public }
 
-      - uses: actions/deploy-pages@v4
-        with: { timeout: 600 }
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Deploy to GitHub Pages
+        id: deploy      # ✅ gir URL-output
+        uses: actions/deploy-pages@v4
