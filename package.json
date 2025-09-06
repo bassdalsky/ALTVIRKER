@@ -1,11 +1,17 @@
 {
   "name": "altvirker",
   "version": "1.0.0",
+  "description": "Velkomst- og godkveldprosjekt med ElevenLabs og OpenWeather",
   "type": "module",
   "scripts": {
-    "full": "node scripts/build_full.js"
+    "velkomst": "node scripts/velkomst_full.js",
+    "godkveld": "node scripts/godkveld_full.js",
+    "full": "npm run velkomst && npm run godkveld"
   },
   "dependencies": {
     "node-fetch": "^3.3.2"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   }
 }
