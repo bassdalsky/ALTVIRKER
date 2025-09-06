@@ -1,33 +1,31 @@
 // velkomst_full.js
-// EN MP3: lang intro (~20–25 s) fra messages/* + dato/ukedag/klokke + vær.
-// Tvinger norsk bokmål ved:
-//  - Modell: eleven_turbo_v2_5 (låst)
-//  - Stemme: Olaf (xF681s0UeE04gsf0mVsJ) (låst, ignorerer secrets)
-//  - Sterk norsk primer først i teksten
-//  - Europe/Oslo + nb-NO formatering, OpenWeather lang=no
+// ÉN MP3: lang, vennlig intro (~20–25 s) fra messages/* + dato/ukedag/klokke + vær.
+// Låst til: norsk (bokmål), Europe/Oslo, ElevenLabs Turbo 2.5, ÉN spesifikk norsk voice.
+// NB: Meldinger ligger i messages/*.txt (du har dem allerede).
 
 import fs from "fs";
 import path from "path";
 
-// ==== LÅSTE KONFIGER ====
-const MODEL_ID = "eleven_turbo_v2_5";
-const VOICE_ID = "xF681s0UeE04gsf0mVsJ"; // Olaf
+// ====== ENV / SECRETS ======
+const ELEVEN_API          = process.env.ELEVENLABS_API_KEY || "";
+const VOICE_ID            = (process.env.ELEVENLABS_VOICE_ID || "").trim(); // ← EN (norsk) ID
+const MODEL_ID            = "eleven_turbo_v2_5"; // låst – ga norsk for deg
+const LANGUAGE_PRIMER     = (process.env.LANGUAGE_PRIMER || "Hei! Dette skal leses på norsk bokmål.").trim();
 
-// ==== SECRETS / ENV ====
-const ELEVEN_API           = process.env.ELEVENLABS_API_KEY || "";
-const OPENWEATHER_API_KEY  = process.env.OPENWEATHER_API_KEY || "";
-const LAT                  = (process.env.SKILBREI_LAT || "").trim();
-const LON                  = (process.env.SKILBREI_LON || "").trim();
-const JULEMODUS            = /^(on|true|1|yes)$/i.test(process.env.JULEMODUS || "");
+const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY || "";
+const LAT                 = (process.env.SKILBREI_LAT || "").trim();
+const LON                 = (process.env.SKILBREI_LON || "").trim();
 
-// ==== KONSTANTER ====
-const TZ = "Europe/Oslo";
-const ROOT = process.cwd();
+const JULEMODUS           = /^(on|true|1|yes)$/i.test(process.env.JULEMODUS || "");
+
+// ====== KONSTANTER ======
+const TZ      = "Europe/Oslo";
+const ROOT    = process.cwd();
 const MSG_DIR = path.join(ROOT, "messages");
 const OUT_MP3 = path.join(ROOT, "velkomst.mp3");
 
-// ==== HJELP ====
-const randPick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+// ====== HJELP ======
+const randPick = a => a[Math.floor(Math.random() * a.length)];
 
 function nowOslo_nb() {
   const d = new Date();
@@ -83,8 +81,8 @@ function pickWelcomeMessage() {
   }
 
   if (!pool.length) {
-    // Solid, LANG fallback (~20 s) – bokmål
-    return "Hjertelig velkommen! Jeg slår på lysene og gjør det hyggelig her hjemme. Sett deg godt til rette, pust rolig ut, og kos deg – her er det varmt, vennlig og lett å lande etter en lang dag.";
+    // solid, lang fallback (~20 s) – bokmål
+    return "Hjertelig velkommen hjem! Jeg slår på lysene og gjør det hyggelig. Sett deg godt til rette, pust rolig ut og land litt – her er det varmt, vennlig og klart for en god kveld.";
   }
   return randPick(pool);
 }
@@ -103,9 +101,10 @@ async function getWeather_nb() {
   return { temp, desc };
 }
 
-// ElevenLabs – arrayBuffer → fil (fiks for Actions)
+// ElevenLabs – arrayBuffer → fil (fiks i Actions)
 async function ttsToMp3({ text, outPath }) {
   if (!ELEVEN_API) throw new Error("Mangler ELEVENLABS_API_KEY");
+  if (!VOICE_ID)   throw new Error("Mangler ELEVENLABS_VOICE_ID (må være EN norsk ID)");
   const url = `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}/stream?optimize_streaming_latency=4&output_format=mp3_44100_128`;
 
   const body = {
@@ -125,7 +124,7 @@ async function ttsToMp3({ text, outPath }) {
   fs.writeFileSync(outPath, buf);
 }
 
-// ==== HOVED ====
+// ====== HOVED ======
 async function main() {
   const { weekday, day, month, year, time } = nowOslo_nb();
   const intro = pickWelcomeMessage(); // lang intro (~20–25 s)
@@ -138,25 +137,11 @@ async function main() {
 
   const julHilsen = isJuleperiode() ? "Riktig god jul!" : "";
 
-  // *** SUPER-NORSK PRIMER (første ord styrer språk sterkt) ***
-  // Inneholder ord, tall og tegn som modeller forbinder klart med norsk bokmål.
-  const hardPrimer = [
-    "Hei!",
-    "Dette skal leses på norsk bokmål, ikke dansk eller svensk.",
-    "Si: jeg, ikke, også, klokka, hjem, hyggelig, vær, kjøleskap, skje, sjø, øy, æ, ø, å.",
-    "Tall sies på norsk, for eksempel: tretten, tjue, trettifem, førti, femti.",
-  ].join(" ");
-
-  // ÉN tekst – intro først, så oppdateringen (dato/ukedag/klokke + vær)
+  // ÉN tekst – intro først, så oppdatering (dato/ukedag/klokke + vær)
+  const primer = LANGUAGE_PRIMER; // f.eks. "Hei! Dette skal leses på norsk bokmål."
   const hale = `I dag er det ${weekday} ${day}. ${month} ${year}. Klokka er nå ${time}. ${vaer}`.trim();
 
-  const manuscript = [
-    hardPrimer,          // ← sterk språkforankring
-    intro,
-    "Her kommer en liten oppdatering.",
-    hale,
-    julHilsen
-  ]
+  const manuscript = [primer, intro, "Her kommer en liten oppdatering.", hale, julHilsen]
     .filter(Boolean)
     .join(" ")
     .replace(/\s+/g, " ");
