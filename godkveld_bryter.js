@@ -1,53 +1,70 @@
-// Genererer godkveld.mp3 direkte frå meldinger_godkveld.txt
-// Krever: npm install node-fetch@3 (gjøres i workflow)
-import fetch from "node-fetch";
+// godkveld_bryter.js
+// Bygger godkveld-lyd (berre melding) → godkveld.mp3
+
 import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
-const ELEVEN_API_KEY = process.env.ELEVENLABS_API_KEY;
-const VOICE_IDS = (process.env.ELEVENLABS_VOICE_IDS || "")
-  .split(",").map(s => s.trim()).filter(Boolean);
-const LANGUAGE_PRIMER = process.env.LANGUAGE_PRIMER || "Hei! Dette er en norsk melding.";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const ROOT = __dirname;
+const MSG_DIR = path.join(ROOT, "messages");
 
-function pick(a){ return a[Math.floor(Math.random()*a.length)] }
+// Miljø
+const ELEVEN_API = process.env.ELEVENLABS_API_KEY;
+const VOICES = (process.env.ELEVENLABS_VOICE_IDS || "").split(",").map(s => s.trim()).filter(Boolean);
+const VOICE_ID = VOICES[0] || "21m00Tcm4TlvDq8ikWAM";
+const PRIMER = process.env.LANGUAGE_PRIMER || "Snakk alltid naturleg på nynorsk i varm, venleg tone. Ingen dansk.";
 
-async function tts(voiceId, text, outPath) {
-  const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+async function elevenTTS(text, outFile) {
+  const url = `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}/stream?optimize_streaming_latency=0`;
+  const body = {
+    model_id: "eleven_multilingual_v2",
+    text,
+    voice_settings: { stability: 0.5, similarity_boost: 0.75 }
+  };
+  const res = await fetch(url, {
     method: "POST",
     headers: {
-      "Accept": "audio/mpeg",
-      "Content-Type": "application/json",
-      "xi-api-key": ELEVEN_API_KEY
+      "xi-api-key": ELEVEN_API,
+      "Content-Type": "application/json"
     },
-    body: JSON.stringify({
-      model_id: "eleven_turbo_v2_5",
-      text: `${LANGUAGE_PRIMER} ${text}`,
-      voice_settings: { stability: 0.45, similarity_boost: 0.8 }
-    })
+    body: JSON.stringify(body)
   });
-  if (!res.ok) throw new Error(`Feil fra ElevenLabs (${res.status}): ${await res.text()}`);
-  const buf = Buffer.from(await res.arrayBuffer());
-  fs.writeFileSync(outPath, buf);
+  if (!res.ok) throw new Error(`ElevenLabs feila: ${res.status} ${await res.text()}`);
+
+  const ws = fs.createWriteStream(outFile);
+  await new Promise((resolve, reject) => {
+    res.body.pipe(ws);
+    res.body.on("error", reject);
+    ws.on("finish", resolve);
+  });
 }
 
-(async () => {
-  try {
-    if (!ELEVEN_API_KEY) throw new Error("Mangler ELEVENLABS_API_KEY");
-    if (!VOICE_IDS.length) throw new Error("Mangler ELEVENLABS_VOICE_IDS");
-    if (!fs.existsSync("meldinger_godkveld.txt")) {
-      throw new Error("Fant ikke meldinger_godkveld.txt i repo-roten.");
-    }
-
-    const lines = fs.readFileSync("meldinger_godkveld.txt", "utf8")
-      .split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-    if (!lines.length) throw new Error("meldinger_godkveld.txt er tom.");
-
-    const msg = pick(lines);           // random melding
-    const voice = pick(VOICE_IDS);     // random stemme (Olaf/Mia/Emma)
-    await tts(voice, msg, "godkveld.mp3");
-
-    console.log("✅ godkveld.mp3 generert:", msg);
-  } catch (e) {
-    console.error("❌ Feil:", e);
-    process.exit(1);
+function pickLineFrom(filePath) {
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`Fant ikkje fil: ${filePath}`);
   }
-})();
+  const lines = fs.readFileSync(filePath, "utf-8")
+    .split("\n")
+    .map(l => l.trim())
+    .filter(l => l.length > 0 && !l.startsWith("#"));
+  if (lines.length === 0) throw new Error(`Ingen gyldige linjer i ${filePath}`);
+  return lines[Math.floor(Math.random() * lines.length)];
+}
+
+async function main() {
+  const filePath = path.join(MSG_DIR, "meldinger_godkveld.txt");
+  const line = pickLineFrom(filePath);
+
+  const text = [PRIMER, line].join(" ");
+  console.log("🎙 Tekst → TTS:\n", text);
+
+  await elevenTTS(text, path.join(ROOT, "godkveld.mp3"));
+  console.log("✅ Lagra: godkveld.mp3");
+}
+
+main().catch(err => {
+  console.error("❌ Feil:", err);
+  process.exit(1);
+});
