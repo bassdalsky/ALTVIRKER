@@ -1,80 +1,60 @@
-name: Velkomst (hybrid – intro+hale)
+name: Render & publish (hybrid)
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: {}
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
 
 jobs:
-  build:
+  build-and-publish:
     runs-on: ubuntu-latest
+    environment: github-pages
     steps:
-      - name: Sjekk ut repo (rent)
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          clean: true
 
-      - name: Sett opp Node
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Installer deps + ffmpeg
-        run: |
-          npm install node-fetch@3
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg
+      - name: Install deps
+        run: npm ci || npm install
 
-      - name: Bygg hale (vær + klokke)
-        run: node scripts/build_tail.js
+      - name: Bygg INTRO (mp3)
+        run: node velkomst_intro.js
         env:
-          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_API_KEY:  ${{ secrets.ELEVENLABS_API_KEY }}
           ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
-          LANGUAGE_PRIMER: ${{ secrets.LANGUAGE_PRIMER }}
+          LANGUAGE_PRIMER:     ${{ secrets.LANGUAGE_PRIMER }}
+
+      - name: Bygg TAIL (vær+klokke)
+        run: node velkomst_tail.js
+        env:
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
-          SKILBREI_LAT: ${{ secrets.SKILBREI_LAT }}
-          SKILBREI_LON: ${{ secrets.SKILBREI_LON }}
+          ELEVENLABS_API_KEY:  ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
+          LANGUAGE_PRIMER:     ${{ secrets.LANGUAGE_PRIMER }}
+          SKILBREI_LAT:        ${{ secrets.SKILBREI_LAT }}
+          SKILBREI_LON:        ${{ secrets.SKILBREI_LON }}
 
-      - name: Finn dagens dag + introklipp (eller lag fallback)
-        id: pick
-        shell: bash
+      - name: For GitHub Pages
         run: |
-          DAY=$(TZ=Europe/Oslo date +%A | tr '[:upper:]' '[:lower:]')
-          # Normaliser laurdag/lørdag/tysdag
-          case "$DAY" in
-            monday|mandag) DAY=mandag;;
-            tuesday|tirsdag|tysdag) DAY=tirsdag;;
-            wednesday|onsdag) DAY=onsdag;;
-            thursday|torsdag) DAY=torsdag;;
-            friday|fredag) DAY=fredag;;
-            saturday|lørdag|lordag|laurdag) DAY=lørdag;;
-            sunday|søndag|sondag) DAY=søndag;;
-          esac
-          echo "DAG=$DAY" >> $GITHUB_OUTPUT
+          mkdir -p public
+          cp velkomst_intro.mp3 public/
+          cp velkomst_tail.mp3 public/
 
-          if ls "clips/$DAY/"*.mp3 >/dev/null 2>&1; then
-            INTRO=$(ls "clips/$DAY/"*.mp3 | shuf -n1)
-            echo "INTRO=$INTRO" >> $GITHUB_OUTPUT
-            echo "Bruker eksisterende intro: $INTRO"
-          else
-            echo "Ingen forhåndsklipp, lager fallback intro_now.mp3"
-            node scripts/make_intro_now.js
-            echo "INTRO=intro_now.mp3" >> $GITHUB_OUTPUT
-          fi
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
 
-      - name: Slå sammen intro + hale → velkomst.mp3
-        run: |
-          echo "file '${{ steps.pick.outputs.INTRO }}'" > concat.txt
-          echo "file 'tail.mp3'" >> concat.txt
-          ffmpeg -y -f concat -safe 0 -i concat.txt -c copy velkomst.mp3
-          rm -f concat.txt tail.mp3 intro_now.mp3 || true
-
-      - name: Commit og push
-        run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add velkomst.mp3
-          git commit -m "Velkomst hybrid: ${{ steps.pick.outputs.DAG }}" || echo "Ingen endringer"
-          git push
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
