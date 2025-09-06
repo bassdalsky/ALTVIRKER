@@ -1,10 +1,12 @@
 {
   "name": "altvirker",
   "version": "1.0.0",
+  "description": "Velkomst (full) – nynorsk + riktig klokke og vær",
   "type": "module",
-  "private": true,
   "scripts": {
-    "velkomst": "node scripts/velkomst_full.js",
-    "godkveld": "node scripts/godkveld.js"
+    "build:velkomst": "node scripts/velkomst_full.js"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
