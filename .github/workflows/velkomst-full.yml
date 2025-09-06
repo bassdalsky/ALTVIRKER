@@ -1,0 +1,53 @@
+name: Build & publish velkomst_full
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+    env:
+      TZ: Europe/Oslo
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install deps
+        run: npm ci || npm i
+
+      - name: Build single full MP3 (intro + weather + time)
+        run: npm run full
+        env:
+          ELEVENLABS_API_KEY:  ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
+          LANGUAGE_PRIMER:     ${{ secrets.LANGUAGE_PRIMER }}
+          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+          SKILBREI_LAT:        ${{ secrets.SKILBREI_LAT }}
+          SKILBREI_LON:        ${{ secrets.SKILBREI_LON }}
+
+      - name: Prepare Pages artifact
+        run: |
+          mkdir -p public
+          cp velkomst_full.mp3 public/
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
