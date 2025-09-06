@@ -1,34 +1,5 @@
-[mandag]
-Hjertelig velkommen! Lysa er tent og litt julestemning på plass. Klokka er {KLOKKA}, og {VÆR}. I dag må du hugse papirbosset – nissen likar ryddige piper. Riktig God jul!
-Så kjekt å sjå deg! Eg har tent lysa og gjort det koseleg. No er klokka {KLOKKA}, og {VÆR}. Det er måndag, så få papirbosset ut før reinsdyra parkerer overalt. Riktig God jul!
-Heisann! Lysa blir slått på for deg og systema er klare og gjort det i julemodus. Klokka er {KLOKKA}, og {VÆR}. Papirboss i dag – vi pakkar inn gåver, men pakkar ut bosset. Riktig God jul!
+Velkomen heim til julehuset! Lys, pynt og varme ventar på deg. Eg håper dagen din har vore fin, og at du no kan finne roen her inne. Pust inn stemninga, kjenn på varmen, og gjer deg klar til å kose deg. Riktig god jul! 
 
-[tirsdag]
-Hjertelig velkommen! Eg har slått på lysa, og mistelteinen heng rett. Klokka er {KLOKKA}, og {VÆR}. Tysdag før jul er perfekt for kakao og litt småpjask. Riktig God jul!
-Så kjekt å sjå deg! Lysa er tent . No er klokka {KLOKKA}, og {VÆR}. Tysdag er ein god dag for å smugsmake på pepperkaker – eg seier ingenting. Riktig God jul!
-Heisann! velkommen inni smarttheimen systema er på og det julekoseleg. Eg har tent lysa. Klokka er {KLOKKA}, og {VÆR}. Tysdag i advent: ta det med ro, sett på julesong og lat som du har kontroll. Riktig God jul!
+Så kjekt at du er heime i juletida. Huset lyser opp i mørket, og inne ventar både ro og hygge. Sett deg ned, slapp av, og nyt at det er jul. Kanskje du unner deg noko godt å ete eller drikke. Riktig god jul! 
 
-[onsdag]
-Hjertelig velkommen! Lysa blir slått på for deg. Klokka er {KLOKKA}, og {VÆR}. Det er onsdag – bossplassen på Sande er open frå 12 til 18. Nissen kildesorterer òg. Riktig God jul!
-Så kjekt å sjå deg! Eg har tent lysa. Klokka er {KLOKKA}, og {VÆR}. Onsdag og julemodus – ein tur til bossplassen før gløggen er lov. Riktig God jul!
-Heisann! Lysa er tent og blankpussa. Klokka er {KLOKKA}, og {VÆR}. Hugs Sande 12–18 i dag – sjølv julenissar må kvitte seg med emballasje. Riktig God jul!
-
-[torsdag]
-Hjertelig velkommen! Eg har slått på lysa. Klokka er {KLOKKA}, og {VÆR}. Torsdag betyr bosspannet – la snøen glitre, ikkje bosslokket. Riktig God jul!
-Så kjekt å sjå deg! Lysa blir slått på for deg. Klokka er {KLOKKA}, og {VÆR}. Torsdag i desember: få bosspannet ned, så slepp du juletrøbbel. Riktig God jul!
-Heisann! Eg har tent lysa. systema er på og det julekoseleg. Klokka er {KLOKKA}, og {VÆR}. Bosspann i dag – ein liten nisse-dugnad før helgefri. Riktig God jul!
-
-[fredag]
-Hjertelig velkommen! Lysa er tent. Klokka er {KLOKKA}, og {VÆR}. Fredag og førjulstid: pizza, julefilm og null stress – nesten. Riktig God jul!
-Så kjekt å sjå deg heim att! Lysa er tent systema er på og det julekoseleg. Klokka er {KLOKKA}, og {VÆR}. Fredag: pakk inn gåver, pakk ut kosemodus. Riktig God jul!
-Heisann! Lysa blir slått på for deg. Klokka er {KLOKKA}, og {VÆR}. Fredag i advent – la støvsugaren få fri og spel julelista. Riktig God jul!
-
-[lørdag]
-Hjertelig velkommen! Eg har tent lysa. Klokka er {KLOKKA}, og {VÆR}. Laurdag + jul = baking, litt kaos og mykje kos. Riktig God jul!
-Så kjekt å sjå deg igjen! Lysa er tent systema er på og det julekoseleg. Klokka er {KLOKKA}, og {VÆR}. Laurdag: perfekt for små nisse-ærend og stor sofakos. Riktig God jul!
-Heisann! Eg har slått på lysa. Klokka er {KLOKKA}, og {VÆR}. Laurdag i desember – kanskje ein liten juletur og ein stor kopp kakao? Riktig God jul!
-
-[søndag]
-Hjertelig velkommen! Lysa blir slått på for deg. Klokka er {KLOKKA}, og {VÆR}. Det er søndag – hugs papirbosset før julefreden senkar seg. Riktig God jul!
-Så kjekt å sjå deg! Eg har tent lysa og gjort det julekoseleg. Klokka er {KLOKKA}, og {VÆR}. Søndag og advent – papirboss først, så peis og peparkaker. Riktig God jul!
-Heisann! Lysa er tent. Klokka er {KLOKKA}, og {VÆR}. Søndag: ro i stova, men hugs papirbosset – nissen likar orden. Riktig God jul!
+Hjertelig velkomen! Desemberdagane kan vere travle, men her heime er det plass til ro. Tenn eit lys, pust godt ut, og kjenn at det er trygt og varmt rundt deg. Nyt kvelden, og ta vare på augneblikka. Riktig god jul! 
