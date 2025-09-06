@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "intro": "node scripts/make_intro_now.js",
-    "tail": "node scripts/build_tail.js"
+    "full": "node scripts/build_full.js"
   },
   "dependencies": {
     "node-fetch": "^3.3.2"
