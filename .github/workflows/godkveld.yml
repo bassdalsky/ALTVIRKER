@@ -1,0 +1,51 @@
+name: Godkveld (bygg)
+
+on:
+  workflow_dispatch: {}
+  repository_dispatch:
+    types: [godkveld]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install (no deps)
+        run: npm ci || true
+
+      - name: Bygg godkveld.mp3
+        run: npm run godkveld
+        env:
+          ELEVENLABS_API_KEY:  ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
+          JULEMODUS:           ${{ secrets.JULEMODUS }}
+
+      - name: Prepare artifact
+        run: |
+          mkdir -p public
+          cp godkveld.mp3 public/
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
