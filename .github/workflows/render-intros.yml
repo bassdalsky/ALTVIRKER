@@ -1,35 +1,64 @@
-// Dispatch_Velkommen – sender dispatch til GitHub Actions
+name: Render & publish intros
 
-const REPO_OWNER = 'bassdalsky';
-const REPO_NAME  = 'ALTVIRKER';
-const WORKFLOW   = 'velkomst-hybrid.yml';
-const BRANCH     = 'main';
+on:
+  workflow_dispatch: {}
 
-// Hent GITHUB_TOKEN frå Logic → Text variable
-const vars = await Homey.logic.getVariables();
-const tokenVar = vars.find(v => v.name === 'GITHUB_TOKEN');
-if (!tokenVar) {
-  throw new Error('Fant ikke Logic-variabel GITHUB_TOKEN. Opprett en tekstvariabel i Homey Logic.');
-}
-const githubToken = tokenVar.value;
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
-const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/workflows/${WORKFLOW}/dispatches`;
+concurrency:
+  group: pages
+  cancel-in-progress: true
 
-const res = await fetch(url, {
-  method: 'POST',
-  headers: {
-    'Authorization': `Bearer ${githubToken}`,
-    'Accept': 'application/vnd.github+json',
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({ ref: BRANCH })
-});
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-const txt = await res.text();
-if (!res.ok) {
-  console.error('❌ GitHub dispatch feila:', res.status, txt);
-  throw new Error(`GitHub ${res.status}: ${txt}`);
-}
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-console.log('🚀 Dispatch sendt ok:', res.status);
-return true;
+      - name: Install deps
+        run: npm ci || npm install
+
+      - name: Render velkomst (mp3)
+        run: node velkomst.js
+        env:
+          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+          ELEVENLABS_API_KEY:  ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
+          LANGUAGE_PRIMER:     ${{ secrets.LANGUAGE_PRIMER }}
+          SKILBREI_LAT:        ${{ secrets.SKILBREI_LAT }}
+          SKILBREI_LON:        ${{ secrets.SKILBREI_LON }}
+          JULEMODUS:           ${{ secrets.JULEMODUS }}
+
+      - name: Render godkveld (mp3) – valgfritt
+        run: node godkveld.js || echo "hopper over (ingen godkveld.js)"
+        env:
+          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+          ELEVENLABS_API_KEY:  ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
+          LANGUAGE_PRIMER:     ${{ secrets.LANGUAGE_PRIMER }}
+          SKILBREI_LAT:        ${{ secrets.SKILBREI_LAT }}
+          SKILBREI_LON:        ${{ secrets.SKILBREI_LON }}
+          JULEMODUS:           ${{ secrets.JULEMODUS }}
+
+      - name: Prepare Pages artifact
+        run: |
+          mkdir -p public
+          [ -f velkomst.mp3 ] && cp velkomst.mp3 public/
+          [ -f godkveld.mp3 ] && cp godkveld.mp3 public/
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
