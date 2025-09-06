@@ -1,9 +1,10 @@
 {
   "name": "altvirker",
-  "version": "1.0.0",
+  "private": true,
   "type": "module",
-  "dependencies": {
-    "node-fetch": "^3.3.2",
-    "dotenv": "^16.4.5"
-  }
+  "scripts": {
+    "intro": "node velkomst_intro.js",
+    "tail": "node velkomst_tail.js"
+  },
+  "dependencies": {}
 }
