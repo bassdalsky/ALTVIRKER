@@ -1,42 +1,61 @@
-// scripts/build_tail.js
-import { writeFile } from "fs/promises";
+import fs from "fs/promises";
+import fetch from "node-fetch";
 
-const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
-const LAT = process.env.SKILBREI_LAT;
-const LON = process.env.SKILBREI_LON;
-const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
-const VOICES = (process.env.ELEVENLABS_VOICE_IDS || "")
-  .split(",").map(s=>s.trim()).filter(Boolean);
-const LANGUAGE_PRIMER = process.env.LANGUAGE_PRIMER || "Hei! Dette er en norsk melding.";
+const ELEVEN_API = "https://api.elevenlabs.io/v1/text-to-speech";
+const API_KEY = process.env.ELEVENLABS_API_KEY;
+const VOICES  = (process.env.ELEVENLABS_VOICE_IDS || "").split(",").map(s=>s.trim()).filter(Boolean);
+const PRIMER  = process.env.LANGUAGE_PRIMER || "Hei!";
 
-if (!OPENWEATHER_API_KEY || !LAT || !LON) throw new Error("Mangler vær-secrets");
+const OW = {
+  key: process.env.OPENWEATHER_API_KEY,
+  lat: process.env.SKILBREI_LAT,
+  lon: process.env.SKILBREI_LON
+};
 
-function nowOsloHHmm() {
-  const tz="Europe/Oslo";
-  return new Date().toLocaleTimeString("no-NO",{hour:"2-digit",minute:"2-digit", timeZone:tz}).replace(":", " ");
+if (!API_KEY || VOICES.length===0) throw new Error("Mangler ELEVENLABS_API_KEY eller ELEVENLABS_VOICE_IDS");
+if (!OW.key || !OW.lat || !OW.lon) throw new Error("Mangler OPENWEATHER_API_KEY / LAT / LON");
+
+function pickRandom(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+function readableTime() {
+  const d = new Date();
+  const hh = d.getHours().toString().padStart(2,"0");
+  const mm = d.getMinutes().toString().padStart(2,"0");
+  // “14 32” funker fint på nynorsk
+  return `${hh} ${mm}`;
 }
-function pick(a){ return a[Math.floor(Math.random()*a.length)] }
 
-const url = `https://api.openweathermap.org/data/2.5/weather?lat=${encodeURIComponent(LAT)}&lon=${encodeURIComponent(LON)}&appid=${encodeURIComponent(OPENWEATHER_API_KEY)}&units=metric&lang=no`;
-const r = await fetch(url);
-if (!r.ok) throw new Error(`OpenWeather feil (${r.status}): ${await r.text()}`);
-const j = await r.json();
-const temp = Math.round(j.main?.temp ?? 0);
-const desc = (j.weather?.[0]?.description ?? "").trim();
+async function getWeather() {
+  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${OW.lat}&lon=${OW.lon}&appid=${OW.key}&units=metric&lang=no`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`OpenWeather ${res.status}: ${await res.text()}`);
+  const data = await res.json();
+  const t = Math.round(data.main.temp);
+  const desc = data.weather?.[0]?.description || "ukjent vêr";
+  return `Klokka er ${readableTime()}. Vêret er ${desc}, og temperaturen er ${t} grader.`;
+}
 
-const haleText = `${LANGUAGE_PRIMER} Forresten: Ute er det ${temp} grader og ${desc}. Klokka er ${nowOsloHHmm()}.`;
+async function tts(text, outFile) {
+  const voice = pickRandom(VOICES);
+  const res = await fetch(`${ELEVEN_API}/${voice}`, {
+    method: "POST",
+    headers: {
+      "xi-api-key": API_KEY,
+      "accept": "audio/mpeg",
+      "content-type": "application/json"
+    },
+    body: JSON.stringify({
+      model_id: "eleven_turbo_v2_5",
+      voice_settings: { stability: 0.6, similarity_boost: 0.7, style: 0.4, use_speaker_boost: true },
+      text: `${PRIMER} ${await getWeather()}`
+    })
+  });
+  if (!res.ok) throw new Error(`ElevenLabs tail feila (${res.status}) ${await res.text()}`);
+  const buf = Buffer.from(await res.arrayBuffer());
+  await fs.writeFile(outFile, buf);
+}
 
-const voice = VOICES.length? pick(VOICES): "xF681s0UeE04gsf0mVsJ";
-const tts = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}`, {
-  method:"POST",
-  headers:{
-    "Accept":"audio/mpeg",
-    "Content-Type":"application/json",
-    "xi-api-key": ELEVENLABS_API_KEY
-  },
-  body: JSON.stringify({ model_id:"eleven_turbo_v2_5", text: haleText })
-});
-if (!tts.ok) throw new Error(`ElevenLabs feil (${tts.status}): ${await tts.text()}`);
-const buf = Buffer.from(await tts.arrayBuffer());
-await writeFile("tail.mp3", buf);
-console.log("✅ Laga tail.mp3 (vær + klokke)");
+(async () => {
+  await tts(" ", "velkomst_tail.mp3"); // getWeather er inni tts-body
+  console.log("✅ Tail OK");
+})();
