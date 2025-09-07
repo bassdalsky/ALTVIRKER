@@ -1,109 +1,119 @@
+
+nede orginal fil  GODKVELD.js 
+
 // scripts/godkveld.js
-// Godkveld på nynorsk – UTAN LANGUAGE_PRIMER i teksten
-// Brukar Node 20 (global fetch), OpenWeather for vêr, ElevenLabs Turbo v2.5
+// Byggar "godkveld.mp3" frå rette meldingar (vanleg/jul) på nynorsk.
+// Brukar ElevenLabs Turbo 2.5. Leser IKKJE LANGUAGE_PRIMER høgt.
 
-import fs from "node:fs";
-import { Readable } from "node:stream";
-import { finished } from "node:stream/promises";
-import { readFile } from "node:fs/promises";
+import fs from 'fs';
+import path from 'path';
+import fetch from 'node-fetch';
 
-// ---- Secrets / env ----
-const OW_KEY = process.env.OPENWEATHER_API_KEY;     // required
-const LAT    = process.env.SKILBREI_LAT;            // required
-const LON    = process.env.SKILBREI_LON;            // required
-const EL_KEY = process.env.ELEVENLABS_API_KEY;      // required
-const VOICES = (process.env.ELEVENLABS_VOICE_IDS || "")
-  .split(",").map(s => s.trim()).filter(Boolean);   // minst éin norsk/nynorsk voice-ID
+// --- konfig frå environment/secrets ---
+const ELEVEN_API = process.env.ELEVENLABS_API_KEY;
+const VOICE_IDS_CSV = process.env.ELEVENLABS_VOICE_IDS || '';   // komma-separerte voice-idar (vel gjerne berre norske stemmer)
+const JULEMODUS = String(process.env.JULEMODUS || '').toLowerCase().trim(); // on/true/1/yes = tvungen jul
+// Merk: LANGUAGE_PRIMER er *medvite* ikkje brukt i teksten for å hindre at den blir lest opp.
 
-// ---- Konstanter ----
-const TZ      = "Europe/Oslo";
-const MSGFILE = "messages/meldinger_godkveld.txt";
-const OUT     = "godkveld.mp3";
-
-// ---- Hjelp ----
-function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-
-function osloNow() {
-  const d = new Date();
-  const dato = new Intl.DateTimeFormat("nn-NO", { timeZone: TZ, weekday:"long", day:"numeric", month:"long" }).format(d);
-  const tid  = new Intl.DateTimeFormat("nn-NO", { timeZone: TZ, hour:"2-digit", minute:"2-digit" }).format(d);
-  return { dato, tid };
+if (!ELEVEN_API) {
+  throw new Error('Mangler ELEVENLABS_API_KEY');
+}
+const VOICES = VOICE_IDS_CSV.split(',').map(v => v.trim()).filter(Boolean);
+if (VOICES.length === 0) {
+  throw new Error('Mangler ELEVENLABS_VOICE_IDS (minst éi norsk stemme)');
 }
 
-async function getWeather() {
-  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${LAT}&lon=${LON}&appid=${OW_KEY}&units=metric&lang=no`;
-  const res = await fetch(url);
-  if (!res.ok) {
-    const t = await res.text().catch(() => "-");
-    throw new Error(`OpenWeather: ${res.status} – ${t}`);
+// --- hjelp ---
+function erJuleperiode(d = new Date()) {
+  // 18. nov – 10. jan
+  const year = d.getFullYear();
+  const start = new Date(`${year}-11-18T00:00:00`);
+  const end = new Date(`${year + 1}-01-10T23:59:59`);
+  return d >= start || d <= end; // dekker over nyttår
+}
+
+function pickRandom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// Les meldingar frå rett fil
+function lesMelding() {
+  const no = new Date();
+  const brukJul = (JULEMODUS === 'on' || JULEMODUS === 'true' || JULEMODUS === '1' || JULEMODUS === 'yes') || erJuleperiode(no);
+
+  const filnavn = brukJul ? 'meldinger_godkveld_jul.txt' : 'meldinger_godkveld.txt';
+  const fullPath = path.join(process.cwd(), 'messages', filnavn);
+
+  if (!fs.existsSync(fullPath)) {
+    throw new Error(`Fann ikkje ${filnavn} i /messages`);
   }
-  const j = await res.json();
-  return {
-    temp: Math.round(j.main?.temp ?? 0),
-    desc: (j.weather?.[0]?.description || "").toLowerCase()
-  };
+  const rå = fs.readFileSync(fullPath, 'utf8');
+  const linjer = rå
+    .split(/\r?\n/)
+    .map(l => l.trim())
+    .filter(l => l && !l.startsWith('#') && l.length > 8);
+
+  if (linjer.length === 0) {
+    throw new Error(`${filnavn} inneheld ingen brukande linjer`);
+  }
+  let tekst = pickRandom(linjer);
+
+  // Legg til ein høfleg julehale dersom vi er i julemodus og teksten ikkje alt har julehelsing
+  if (brukJul && !/god jul/i.test(tekst)) {
+    tekst += ' Riktig god jul! 🎄';
+  }
+  return tekst;
 }
 
-async function readMessages() {
-  const raw = await readFile(MSGFILE, "utf8");
-  const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith("#"));
-  if (!lines.length) throw new Error(`Fann ingen linjer i ${MSGFILE}`);
-  return lines;
-}
-
-function buildText(baseLine, now, w) {
-  // baseLine kjem frå meldinger_godkveld_jul.txt (allereie 20–25s lange med "lysa sløkkjer seg / systema av")
-  // Me legg berre på klokke + vêr til slutt – og held oss 100% utan primer.
-  const hale = ` Klokka er ${now.tid}, og det er ${now.dato}. Ute er det ${w.desc}, og temperaturen ligg kring ${w.temp} grader. Riktig god jul, og god natt.`;
-  return `${baseLine} ${hale}`;
-}
-
-async function ttsToFile(text) {
-  if (!EL_KEY) throw new Error("Mangler ELEVENLABS_API_KEY");
-  if (!VOICES.length) throw new Error("Mangler ELEVENLABS_VOICE_IDS");
-
-  const voice = pick(VOICES);
-  const url = `https://api.elevenlabs.io/v1/text-to-speech/${voice}/stream?optimize_streaming_latency=4`;
-
-  const payload = {
-    model_id: "eleven_turbo_v2_5",
-    text,
-    voice_settings: { stability: 0.5, similarity_boost: 0.75, style: 0.2, use_speaker_boost: true }
+// Kall ElevenLabs (Turbo 2.5) og lagre direkte til fil utan .pipe()
+async function ttsTilFil(voiceId, text, outFile) {
+  const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
+  const body = {
+    text,                          // KUN meldinga – ingen primer!
+    model_id: 'eleven_turbo_v2_5',
+    // valfrie innstillingar – konservative for klar tale
+    voice_settings: {
+      stability: 0.45,
+      similarity_boost: 0.7,
+      style: 0.2,
+      use_speaker_boost: true
+    }
   };
 
   const res = await fetch(url, {
-    method: "POST",
+    method: 'POST',
     headers: {
-      "xi-api-key": EL_KEY,
-      "Content-Type": "application/json"
+      'xi-api-key': ELEVEN_API,
+      'Content-Type': 'application/json',
+      'Accept': 'audio/mpeg'
     },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(body)
   });
 
   if (!res.ok) {
-    const t = await res.text().catch(() => "-");
-    throw new Error(`ElevenLabs: ${res.status} – ${t}`);
+    const errTxt = await res.text().catch(() => '');
+    throw new Error(`ElevenLabs feil ${res.status}: ${errTxt}`);
   }
 
-  const file = fs.createWriteStream(OUT);
-  await finished(Readable.fromWeb(res.body).pipe(file));
+  // Unngå .pipe() → bruk arrayBuffer for å vere kompatibel i Actions
+  const buf = Buffer.from(await res.arrayBuffer());
+  fs.writeFileSync(outFile, buf);
 }
 
+// --- hovud ---
 async function main() {
-  try {
-    const [lines, weather] = await Promise.all([readMessages(), getWeather()]);
-    const base = pick(lines);
-    const now  = osloNow();
-    const text = buildText(base, now, weather);
+  const melding = lesMelding();
+  const voiceId = pickRandom(VOICES);
+  const out = path.join(process.cwd(), 'godkveld.mp3');
 
-    await ttsToFile(text);
-    console.log("✅ godkveld.mp3 (jul) generert utan primer-intro.");
-  } catch (err) {
-    console.error("❌ Feil:", err);
-    process.exit(1);
-  }
+  console.log('▶️  Stemme:', voiceId);
+  console.log('📝  Tekst:', melding);
+
+  await ttsTilFil(voiceId, melding, out);
+  console.log('✅ Skreiv', out);
 }
 
-await main();
-
-
+main().catch(err => {
+  console.error('❌ Feil:', err);
+  process.exit(1);
+});
