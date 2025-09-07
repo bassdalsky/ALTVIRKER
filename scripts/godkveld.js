@@ -115,3 +115,9 @@ main().catch(err => {
   console.error('❌ Feil:', err);
   process.exit(1);
 });
+
+// Vel meldingsfil basert på julemodus
+const file = julemodus === "on"
+  ? "messages/meldinger_godkveld_jul.txt"
+  : "messages/meldinger_godkveld.txt";
+
