@@ -1,21 +1,32 @@
 import fetch from "node-fetch";
+import fs from "fs";
 
+// Vel tilfeldig stemme frå secrets
 function pickRandomVoice() {
   const voices = process.env.ELEVENLABS_VOICE_IDS.split(",");
   return voices[Math.floor(Math.random() * voices.length)];
 }
 
+// Hent tid/dato
 function getTimeAndDate() {
   const now = new Date();
   const options = { weekday: "long", hour: "2-digit", minute: "2-digit" };
-  return now.toLocaleString("nn-NO", options);
+  return now.toLocaleString("no-NO", options);
 }
 
-async function buildText() {
-  const datetime = getTimeAndDate();
-  return `God kveld. Klokka er ${datetime}. Lysa blir sløkte, og systema går i kvile. Sov godt og ha ei roleg natt.`;
+// Bygg tekst frå godkveld.txt (eller godkveld_jul.txt når julemodus = on)
+function loadMessage() {
+  let path = "messages/meldinger_godkveld.txt";
+  if (process.env.JULEMODUS === "on") {
+    path = "messages/meldinger_godkveld_jul.txt";
+  }
+  const lines = fs.readFileSync(path, "utf-8")
+    .split("\n")
+    .filter(l => l.trim() !== "");
+  return lines[Math.floor(Math.random() * lines.length)];
 }
 
+// Send tekst til ElevenLabs
 async function generateMp3(text) {
   const voiceId = pickRandomVoice();
   const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
@@ -23,12 +34,7 @@ async function generateMp3(text) {
   const body = {
     model_id: "eleven_turbo_v2_5",
     text,
-    voice_settings: {
-      stability: 0.5,
-      similarity_boost: 0.8
-    },
-    language: "no",
-    language_code: "nn-NO"
+    voice_settings: { stability: 0.5, similarity_boost: 0.8 }
   };
 
   const res = await fetch(url, {
@@ -46,14 +52,17 @@ async function generateMp3(text) {
   }
 
   const buffer = Buffer.from(await res.arrayBuffer());
-  await Bun.write("godkveld.mp3", buffer);
+  fs.writeFileSync("godkveld.mp3", buffer);
 }
 
+// Main
 (async () => {
   try {
-    const text = await buildText();
-    console.log("[DEBUG] Generert tekst:", text);
-    await generateMp3(text);
+    const melding = loadMessage();
+    const time = getTimeAndDate();
+    const fullText = `${melding} Klokka er ${time}.`;
+    console.log("[DEBUG] Generert tekst:", fullText);
+    await generateMp3(fullText);
   } catch (err) {
     console.error("❌ Feil:", err);
     process.exit(1);
