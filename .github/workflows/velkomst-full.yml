@@ -1,7 +1,7 @@
-name: Render & publish velkomst (NO locked)
+name: Render & publish velkomst_full (nynorsk)
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -26,23 +26,21 @@ jobs:
         with:
           node-version: 20
 
-      - name: Build velkomst (Turbo 2.5, Oslo-tid)
+      - name: Install deps
+        run: npm install
+
+      - name: Build velkomst_full (Oslo-tid, nynorsk)
         env:
-          TZ: Europe/Oslo
-          ELEVENLABS_API_KEY:  ${{ secrets.ELEVENLABS_API_KEY }}
-          ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}   # ← kun DEN norske ID-en
-          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
-          SKILBREI_LAT:        ${{ secrets.SKILBREI_LAT }}
-          SKILBREI_LON:        ${{ secrets.SKILBREI_LON }}
-          LANGUAGE_PRIMER:     ${{ secrets.LANGUAGE_PRIMER }}       # kan stå som du vil
-          JULEMODUS:           ${{ secrets.JULEMODUS }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
         run: |
-          node velkomst_full.js
+          node scripts/velkomst_full.js
+          test -f velkomst.mp3 && ls -lh velkomst.mp3
 
       - name: Prepare Pages artifact
         run: |
           mkdir -p public
-          cp velkomst.mp3 public/
+          cp velkomst.mp3 public/velkomst.mp3
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
