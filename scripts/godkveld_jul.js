@@ -1,13 +1,13 @@
 // scripts/godkveld_jul.js
 import fs from 'node:fs/promises';
 
-// ---------- konfig fra secrets ----------
+// ---------- konfig frå secrets ----------
 const OW_API_KEY   = process.env.OPENWEATHER_API_KEY;
 const LAT          = process.env.SKILBREI_LAT;
 const LON          = process.env.SKILBREI_LON;
 const ELEVEN_KEY   = process.env.ELEVENLABS_API_KEY;
 const VOICE_IDS    = (process.env.ELEVENLABS_VOICE_IDS || '').split(',').map(s => s.trim()).filter(Boolean);
-const PRIMER       = (process.env.LANGUAGE_PRIMER || '').trim();   // f.eks. "Snakk NORSK (Nynorsk) ..."
+const PRIMER       = (process.env.LANGUAGE_PRIMER || '').trim();
 const JULEMODUS    = (process.env.JULEMODUS || '').toLowerCase();
 // ---------------------------------------
 
@@ -15,7 +15,7 @@ const TZ = 'Europe/Oslo';
 const MSG_FILE = 'messages/meldinger_godkveld_jul.txt';
 const OUT_MP3  = 'godkveld.mp3';
 
-function pick<T>(arr: T[]): T {
+function pick(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
@@ -44,7 +44,6 @@ async function getWeather() {
 
 async function readMessages(path) {
   const raw = await fs.readFile(path, 'utf8');
-  // Fjern kommentarer/blanke linjer
   const lines = raw.split(/\r?\n/).map(l => l.trim())
     .filter(l => l && !l.startsWith('#'));
   if (lines.length === 0) throw new Error(`Fant ingen meldinger i ${path}`);
@@ -52,14 +51,12 @@ async function readMessages(path) {
 }
 
 function buildText(baseLine, dateTimeStr, weather) {
-  // Sveis saman: primer → melding → rotor med jul → avslutning
   const julTail = (JULEMODUS === 'on' || JULEMODUS === 'true' || JULEMODUS === '1')
     ? ' Riktig god jul, og takk for at du er innom. Huset dempar lys og system tek kvelden etter kvart, så du kan finne roen.'
     : '';
 
   const tail = ` Klokka er ${dateTimeStr}. Ute er det ${weather.desc}, omkring ${weather.temp} grader.`;
 
-  // Legg PRIMER først for å låse språk (blir ofte ikkje merkt i opplesinga, men styrer modellen).
   const primerPrefix = PRIMER ? `${PRIMER}\n\n` : '';
 
   return `${primerPrefix}${baseLine}${tail}${julTail}`;
@@ -105,15 +102,13 @@ async function main() {
       getWeather()
     ]);
 
-    const base = pick(lines);                // tilfeldig jule-melding
-    const nowStr = formatNow();              // Oslo-tid
+    const base = pick(lines);
+    const nowStr = formatNow();
     const fullText = buildText(base, nowStr, weather);
 
     await ttsToFile(fullText, OUT_MP3);
 
     console.log('✅ Godkveld (jul) generert:', OUT_MP3);
-    console.log('   Valgt voice (random):', VOICE_IDS.length ? '(skjult id)' : '–');
-    console.log('   Primer aktiv:', Boolean(PRIMER));
   } catch (err) {
     console.error('❌ Feil:', err);
     process.exit(1);
