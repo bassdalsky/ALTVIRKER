@@ -2,42 +2,53 @@ import fs from "fs";
 import fetch from "node-fetch";
 
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
-const VOICE_IDS = (process.env.ELEVENLABS_VOICE_IDS || "").split(",");
-const LANGUAGE_PRIMER = process.env.LANGUAGE_PRIMER || "";
+const VOICE_IDS = (process.env.ELEVENLABS_VOICE_IDS || "").split(",").map(s => s.trim()).filter(Boolean);
 
 function randomVoice() {
+  if (!VOICE_IDS.length) throw new Error("Mangler ELEVENLABS_VOICE_IDS.");
   return VOICE_IDS[Math.floor(Math.random() * VOICE_IDS.length)];
 }
 
-function getRandomMessage() {
-  const path = `messages/meldinger_godkveld.txt`;
-  const lines = fs.readFileSync(path, "utf-8").split("\n").filter(l => l.trim());
+function osloTime() {
+  return new Date().toLocaleTimeString("no-NO", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Oslo" });
+}
+
+function pickRandomLine(path) {
+  const lines = fs.readFileSync(path, "utf-8").split("\n").map(l => l.trim()).filter(Boolean);
+  if (!lines.length) throw new Error(`Tom meldingsfil: ${path}`);
   return lines[Math.floor(Math.random() * lines.length)];
 }
 
-async function makeMp3(text) {
+async function generateMp3(text, outFile) {
   const voice = randomVoice();
-  const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}`, {
+  const url = `https://api.elevenlabs.io/v1/text-to-speech/${voice}`;
+  const body = {
+    model_id: "eleven_turbo_v2_5",
+    text, // 👈 ingen primer i selve teksten
+    voice_settings: { stability: 0.5, similarity_boost: 0.8 }
+  };
+  const res = await fetch(url, {
     method: "POST",
     headers: {
       "xi-api-key": ELEVENLABS_API_KEY,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      text: LANGUAGE_PRIMER + " " + text,
-      model_id: "eleven_turbo_v2_5",
-      voice_settings: { stability: 0.5, similarity_boost: 0.8 }
-    }),
+    body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(`ElevenLabs-feil (${res.status})`);
-  const buffer = Buffer.from(await res.arrayBuffer());
-  fs.writeFileSync("godkveld.mp3", buffer);
-  console.log("✅ godkveld.mp3 generert!");
+  if (!res.ok) throw new Error(`ElevenLabs-feil (${res.status}): ${await res.text()}`);
+  const buf = Buffer.from(await res.arrayBuffer());
+  fs.writeFileSync(outFile, buf);
+  console.log(`✅ Skreiv ${outFile} (${(buf.length/1024/1024).toFixed(2)} MB)`);
 }
 
 async function main() {
-  const melding = getRandomMessage();
-  await makeMp3(melding);
+  // lang, roleg godkveld-tekst (20–25 s) – du har eigen fil
+  const base = pickRandomLine("messages/godkveld.txt");
+  const timeStr = osloTime();
+  const fullText = `${base} Klokka er ${timeStr}.`;
+
+  console.log("🎙️ Genererer godkveld:", fullText);
+  await generateMp3(fullText, "godkveld.mp3");
 }
 
 main().catch(err => {
