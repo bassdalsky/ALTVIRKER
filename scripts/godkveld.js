@@ -1,6 +1,4 @@
 
-nede orginal fil  GODKVELD.js 
-
 // scripts/godkveld.js
 // Byggar "godkveld.mp3" frå rette meldingar (vanleg/jul) på nynorsk.
 // Brukar ElevenLabs Turbo 2.5. Leser IKKJE LANGUAGE_PRIMER høgt.
