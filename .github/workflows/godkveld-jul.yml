@@ -1,0 +1,52 @@
+name: Render & publish godkveld (jul, nynorsk)
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install deps
+        run: npm ci || npm install
+
+      - name: Build godkveld (jul, Nynorsk)
+        env:
+          ELEVENLABS_API_KEY:   ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
+          ELEVEN_MODEL_ID:      ${{ secrets.ELEVEN_MODEL_ID }}
+          LANGUAGE_PRIMER:      ${{ secrets.LANGUAGE_PRIMER }}
+        run: node scripts/godkveld_jul.js
+
+      - name: Prepare Pages artifact
+        run: |
+          mkdir -p public
+          cp godkveld.mp3 public/
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
