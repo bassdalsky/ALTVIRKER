@@ -1,13 +1,15 @@
 {
   "name": "altvirker",
   "version": "1.0.0",
-  "description": "Velkomst + vær (Nynorsk) med ElevenLabs og GitHub Pages",
+  "description": "Velkomst og godkveld (Nynorsk) med ElevenLabs + OpenWeather",
   "type": "module",
   "scripts": {
-    "build:velkomst:full": "node scripts/velkomst_full.js"
+    "godkveld": "node scripts/godkveld.js",
+    "velkomst": "node scripts/velkomst.js",
+    "start": "node scripts/godkveld.js"
   },
   "dependencies": {
-    "date-fns": "^3.6.0",
-    "date-fns-tz": "^3.0.0"
+    "dotenv": "^16.4.5",
+    "node-fetch": "^3.3.2"
   }
 }
