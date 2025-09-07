@@ -1,92 +1,77 @@
-import fetch from "node-fetch";
 import fs from "fs";
-import dotenv from "dotenv";
+import fetch from "node-fetch";
 
-dotenv.config();
+// 🔑 Secrets frå GitHub
+const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
+const VOICE_IDS = (process.env.ELEVENLABS_VOICE_IDS || "").split(",");
+const LANGUAGE_PRIMER = process.env.LANGUAGE_PRIMER || "";
+const WEATHER_KEY = process.env.OPENWEATHER_API_KEY;
+const LAT = process.env.SKILBREI_LAT;
+const LON = process.env.SKILBREI_LON;
 
-function pickRandom(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
+// 🎲 Velg tilfeldig stemme
+function randomVoice() {
+  return VOICE_IDS[Math.floor(Math.random() * VOICE_IDS.length)];
 }
 
-function nowOslo() {
-  return new Date(
-    new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Europe/Oslo",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    }).format(new Date())
-  );
+// 🌤️ Hent vær
+async function getWeather() {
+  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${LAT}&lon=${LON}&appid=${WEATHER_KEY}&units=metric&lang=no`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Kunne ikkje hente værdata");
+  const data = await res.json();
+  return `${Math.round(data.main.temp)} grader og ${data.weather[0].description}`;
 }
 
-function weekdayOsloLower() {
-  return new Intl.DateTimeFormat("nn-NO", {
-    weekday: "long",
-    timeZone: "Europe/Oslo",
-  })
-    .format(new Date())
-    .toLowerCase();
-}
-
+// 🕒 Hent klokke/dato
 function getTimeAndDate() {
-  const now = nowOslo();
-  const time = now.toLocaleTimeString("nn-NO", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  const date = now.toLocaleDateString("nn-NO", {
-    day: "2-digit",
-    month: "long",
-  });
-  const weekday = weekdayOsloLower();
-  return { time, date, weekday };
+  const now = new Date();
+  const optionsDate = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
+  const optionsTime = { hour: "2-digit", minute: "2-digit" };
+  const dato = now.toLocaleDateString("no-NO", optionsDate);
+  const klokke = now.toLocaleTimeString("no-NO", optionsTime);
+  return { dato, klokke };
 }
 
-async function generateMp3(text) {
-  const voices = process.env.ELEVENLABS_VOICE_IDS.split(",");
-  const voiceId = pickRandom(voices);
+// 📖 Velg tilfeldig melding frå messages/
+function getRandomMessage() {
+  const weekday = new Date().toLocaleDateString("no-NO", { weekday: "long" }).toLowerCase();
+  const path = `messages/${weekday}.txt`;
+  const lines = fs.readFileSync(path, "utf-8").split("\n").filter(l => l.trim());
+  return lines[Math.floor(Math.random() * lines.length)];
+}
 
-  const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
-  const body = {
-    model_id: "eleven_turbo_v2_5",
-    text: text,
-    voice_settings: { stability: 0.5, similarity_boost: 0.8 },
-  };
-
-  const res = await fetch(url, {
+// 🔊 Lag MP3 frå ElevenLabs
+async function makeMp3(text) {
+  const voice = randomVoice();
+  const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}`, {
     method: "POST",
     headers: {
-      "xi-api-key": process.env.ELEVENLABS_API_KEY,
+      "xi-api-key": ELEVENLABS_API_KEY,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({
+      text: LANGUAGE_PRIMER + " " + text,
+      model_id: "eleven_turbo_v2_5",
+      voice_settings: { stability: 0.5, similarity_boost: 0.8 }
+    }),
   });
-
-  if (!res.ok) throw new Error("Feil frå ElevenLabs: " + (await res.text()));
-
-  const arrayBuffer = await res.arrayBuffer();
-  fs.writeFileSync("velkomst.mp3", Buffer.from(arrayBuffer));
+  if (!res.ok) throw new Error(`ElevenLabs-feil (${res.status})`);
+  const buffer = Buffer.from(await res.arrayBuffer());
+  fs.writeFileSync("velkomst.mp3", buffer);
+  console.log("✅ velkomst.mp3 generert!");
 }
 
 async function main() {
-  const meldinger = fs
-    .readFileSync("messages/meldinger.txt", "utf-8")
-    .split("\n")
-    .filter((l) => l.trim() !== "");
+  const { dato, klokke } = getTimeAndDate();
+  const vær = await getWeather();
+  const melding = getRandomMessage();
 
-  const melding = pickRandom(meldinger);
-  const { time, date, weekday } = getTimeAndDate();
-
-  const fulltext = `${melding} Det er ${weekday} ${date}, klokka er ${time}.`;
-  console.log("🎙️ Genererer velkomst:", fulltext);
-
-  await generateMp3(fulltext);
+  const fullText = `${melding} I dag er det ${dato}. Klokka er ${klokke}, og ute er det ${vær}.`;
+  await makeMp3(fullText);
 }
 
-main().catch((err) => {
-  console.error("❌ Feil i velkomst:", err);
+main().catch(err => {
+  console.error("❌ Feil:", err);
   process.exit(1);
 });
