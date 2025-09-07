@@ -1,84 +1,76 @@
-// Velkomst (Nynorsk) – ukedagar + julemodus
-// Leser frå messages/meldinger_*.txt eller meldinger_jul.txt
-
-import fs from "fs";
 import fetch from "node-fetch";
 
-// Secrets / env
-const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
-const ELEVENLABS_API_KEY  = process.env.ELEVENLABS_API_KEY;
-const ELEVENLABS_VOICE_IDS = (process.env.ELEVENLABS_VOICE_IDS || "").split(",").map(s => s.trim()).filter(Boolean);
-const SKILBREI_LAT = process.env.SKILBREI_LAT;
-const SKILBREI_LON = process.env.SKILBREI_LON;
-const JULEMODUS    = (process.env.JULEMODUS || "off").toLowerCase();
+// Plukk tilfeldig stemme frå secrets (komma-separert liste)
+function pickRandomVoice() {
+  const voices = process.env.ELEVENLABS_VOICE_IDS.split(",");
+  return voices[Math.floor(Math.random() * voices.length)];
+}
 
-function pickRandom(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-
-async function getWeather(){
-  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${SKILBREI_LAT}&lon=${SKILBREI_LON}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=no`;
+// Hent vêr frå OpenWeather
+async function getWeather() {
+  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${process.env.SKILBREI_LAT}&lon=${process.env.SKILBREI_LON}&appid=${process.env.OPENWEATHER_API_KEY}&units=metric&lang=no`;
   const res = await fetch(url);
-  if(!res.ok) throw new Error("Feil frå OpenWeather: " + res.status);
+  if (!res.ok) throw new Error("Feil ved henting av vêrdata");
   const data = await res.json();
-  const temp = Math.round(data.main.temp);
-  const desc = data.weather?.[0]?.description || "ukjent vêr";
-  return `${temp} grader og ${desc}`;
+  return `${Math.round(data.main.temp)} grader og ${data.weather[0].description}`;
 }
 
-function getTimeAndDate(){
-  const tz = "Europe/Oslo";
+// Formater tid og dato
+function getTimeAndDate() {
   const now = new Date();
-  const time = now.toLocaleTimeString("no-NO", { timeZone: tz, hour:"2-digit", minute:"2-digit" });
-  const date = now.toLocaleDateString("no-NO", { timeZone: tz, weekday:"long", day:"numeric", month:"long" });
-  const weekday = now.toLocaleDateString("no-NO", { timeZone: tz, weekday:"long" }).toLowerCase();
-  return { time, date, weekday };
+  const options = { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" };
+  return now.toLocaleString("nn-NO", options); // tvungen nynorsk
 }
 
-function chooseMessageFile(weekday){
-  if(JULEMODUS === "on") return "messages/meldinger_jul.txt";
-  switch(weekday){
-    case "mandag": return "messages/meldinger_mandag.txt";
-    case "tysdag": return "messages/meldinger_tysdag.txt";
-    case "onsdag": return "messages/meldinger_onsdag.txt";
-    case "torsdag": return "messages/meldinger_torsdag.txt";
-    case "fredag": return "messages/meldinger_fredag.txt";
-    case "laurdag": return "messages/meldinger_laurdag.txt";
-    case "søndag": return "messages/meldinger_sondag.txt";
-    default:       return "messages/meldinger_vanleg.txt";
-  }
+// Lag teksten basert på melding + vêr + klokke
+async function buildText() {
+  const weather = await getWeather();
+  const datetime = getTimeAndDate();
+  return `Hjartelig velkommen heim! Lysa blir tende for deg. No er det ${datetime}, og ute er det ${weather}.`;
 }
 
-async function ttsToFile(text, outfile){
-  const voice = pickRandom(ELEVENLABS_VOICE_IDS);
-  const url = `https://api.elevenlabs.io/v1/text-to-speech/${voice}`;
+// Send til ElevenLabs og lag mp3
+async function generateMp3(text) {
+  const voiceId = pickRandomVoice();
+  const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
+
   const body = {
-    text:
-`Snakk NORSK (Nynorsk). Ikkje svensk eller dansk. Bruk varme, naturlege ord og uttalar.
-
-${text}`,
     model_id: "eleven_turbo_v2_5",
-    voice_settings: { stability: 0.5, similarity_boost: 0.8 }
+    text,
+    voice_settings: {
+      stability: 0.5,
+      similarity_boost: 0.8
+    },
+    language: "no",
+    language_code: "nn-NO"
   };
+
   const res = await fetch(url, {
     method: "POST",
-    headers: { "xi-api-key": ELEVENLABS_API_KEY, "Content-Type": "application/json" },
+    headers: {
+      "xi-api-key": process.env.ELEVENLABS_API_KEY,
+      "Content-Type": "application/json"
+    },
     body: JSON.stringify(body)
   });
-  if(!res.ok) throw new Error("Feil frå ElevenLabs: " + (await res.text()));
-  const buf = Buffer.from(await res.arrayBuffer());
-  fs.writeFileSync(outfile, buf);
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error("Feil frå ElevenLabs: " + err);
+  }
+
+  const buffer = Buffer.from(await res.arrayBuffer());
+  await Bun.write("velkomst.mp3", buffer); // GitHub Actions plukkar opp fila
 }
 
-async function main(){
-  const { time, date, weekday } = getTimeAndDate();
-  const file = chooseMessageFile(weekday);
-  const lines = fs.readFileSync(file, "utf-8").split("\n").map(l=>l.trim()).filter(Boolean);
-  const base = pickRandom(lines);
-  const weather = await getWeather();
-
-  const full = `${base} Klokka er ${time} den ${date}. Ute er det ${weather}.`;
-  console.log("🔊 Velkomst:", full);
-
-  await ttsToFile(full, "velkomst.mp3");
-}
-
-main().catch(err => { console.error("❌ Feil:", err); process.exit(1); });
+// Main
+(async () => {
+  try {
+    const text = await buildText();
+    console.log("[DEBUG] Generert tekst:", text);
+    await generateMp3(text);
+  } catch (err) {
+    console.error("❌ Feil:", err);
+    process.exit(1);
+  }
+})();
