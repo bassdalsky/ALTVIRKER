@@ -1,6 +1,3 @@
-// scripts/velkomst.js
-// Les dag-filer, norsk, Oslo-tid, julemodus. Primer IKKE med i TTS-tekst.
-
 import fs from "fs";
 import fetch from "node-fetch";
 
@@ -21,7 +18,8 @@ const JULEMODUS = boolFromEnv(process.env.JULEMODUS);
 const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
 const SKILBREI_LAT = process.env.SKILBREI_LAT;
 const SKILBREI_LON = process.env.SKILBREI_LON;
-// Primer beholdes, men sendes IKKE i TTS-teksten.
+
+// Primer beholdes KUN internt (ikke lest opp)
 const LANGUAGE_PRIMER =
   (process.env.LANGUAGE_PRIMER && process.env.LANGUAGE_PRIMER.trim()) ||
   "Dette er ein norsk nynorsk-stemme. Ver naturleg og varm.";
@@ -74,7 +72,7 @@ async function ttsToFile(text, outFile) {
   const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
   const body = {
     model_id: "eleven_turbo_v2_5",
-    // Viktig: IKKE legg primer inn i text → den blir ikke lest opp
+    // Viktig: primeren sendes IKKE i text (så den blir ikke lest høyt)
     text,
     voice_settings: { stability: 0.5, similarity_boost: 0.8 },
   };
@@ -96,7 +94,7 @@ async function main() {
   const melding = pickRandom(lines);
   const weather = await getWeather();
 
-  // Meldinga ~20–25 s. Klokka og vær til slutt.
+  // Meldinga (~20–25 s). Klokke/vær til slutt.
   const fullText = `${melding} Klokka er ${time}, dato ${date}. Ute er det ${weather}.`;
 
   console.log("[DEBUG] Velkomst-fil:", file);
