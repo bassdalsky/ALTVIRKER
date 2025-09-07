@@ -1,7 +1,7 @@
 name: Render & publish godkveld (nynorsk)
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -27,19 +27,25 @@ jobs:
           node-version: 20
 
       - name: Install deps
-        run: npm install node-fetch
+        run: npm ci || npm install
 
-      - name: Render godkveld
-        run: node scripts/godkveld.js
+      - name: Build godkveld (jul OFF by default)
         env:
-          ELEVENLABS_API_KEY:   ${{ secrets.ELEVENLABS_API_KEY }}
+          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+          SKILBREI_LAT: ${{ secrets.SKILBREI_LAT }}
+          SKILBREI_LON: ${{ secrets.SKILBREI_LON }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
           ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
-          LANGUAGE_PRIMER:      ${{ secrets.LANGUAGE_PRIMER }}
+          LANGUAGE_PRIMER: ${{ secrets.LANGUAGE_PRIMER }}
+          JULEMODUS: ${{ secrets.JULEMODUS }}
+        run: |
+          node scripts/godkveld.js
+          echo "$(date)" >> godkveld.mp3
 
       - name: Prepare Pages artifact
         run: |
           mkdir -p public
-          cp godkveld.mp3 public/
+          cp godkveld.mp3 public/godkveld.mp3
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
