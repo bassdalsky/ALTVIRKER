@@ -1,7 +1,7 @@
-name: Render & publish velkomst (nynorsk)
+name: Render & publish velkomst (norsk)
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: {}
 
 permissions:
   contents: read
@@ -17,6 +17,9 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
+    env:
+      TZ: Europe/Oslo   # <-- tving runner til Oslo-tid (backup i tillegg til koden)
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,25 +30,33 @@ jobs:
           node-version: 20
 
       - name: Install deps
-        run: npm ci || npm install
+        run: npm install
 
-      - name: Build velkomst (jul OFF by default)
+      - name: Debug klokke (runner)
+        run: |
+          date
+          node -e "console.log('Node Date:', new Date().toString())"
+
+      - name: Bygg velkomst (kjør NØYAKTIG scripts/velkomst.js)
         env:
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
-          SKILBREI_LAT: ${{ secrets.SKILBREI_LAT }}
-          SKILBREI_LON: ${{ secrets.SKILBREI_LON }}
-          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          SKILBREI_LAT:        ${{ secrets.SKILBREI_LAT }}
+          SKILBREI_LON:        ${{ secrets.SKILBREI_LON }}
+          ELEVENLABS_API_KEY:  ${{ secrets.ELEVENLABS_API_KEY }}
           ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
-          LANGUAGE_PRIMER: ${{ secrets.LANGUAGE_PRIMER }}
-          JULEMODUS: ${{ secrets.JULEMODUS }}
+          LANGUAGE_PRIMER:     ${{ secrets.LANGUAGE_PRIMER }}
+          JULEMODUS:           ${{ secrets.JULEMODUS }}
         run: |
-          node scripts/velkomst_full.js
-          echo "$(date)" >> velkomst.mp3
+          ls -R
+          node scripts/velkomst.js
+          ls -lh velkomst.mp3
 
       - name: Prepare Pages artifact
         run: |
           mkdir -p public
           cp velkomst.mp3 public/velkomst.mp3
+          # cache-bust i innhold, så URL alltid fornyer seg
+          echo "$(date)" >> public/velkomst.mp3
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
