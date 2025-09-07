@@ -1,16 +1,15 @@
-name: Render & publish velkomst (jul)
+name: Render & publish velkomst (jul, Nynorsk)
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
 
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Viktig for Pages
 concurrency:
-  group: pages
+  group: "pages"
   cancel-in-progress: true
 
 jobs:
@@ -18,7 +17,6 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,11 +32,12 @@ jobs:
       - name: Build velkomst (jul, Nynorsk)
         env:
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
-          SKILBREI_LAT:        ${{ secrets.SKILBREI_LAT }}
-          SKILBREI_LON:        ${{ secrets.SKILBREI_LON }}
-          ELEVENLABS_API_KEY:  ${{ secrets.ELEVENLABS_API_KEY }}
-          ELEVENLABS_VOICE_IDS:${{ secrets.ELEVENLABS_VOICE_IDS }}
-          LANGUAGE_PRIMER:     ${{ secrets.LANGUAGE_PRIMER }}
+          SKILBREI_LAT: ${{ secrets.SKILBREI_LAT }}
+          SKILBREI_LON: ${{ secrets.SKILBREI_LON }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
+          LANGUAGE_PRIMER: ${{ secrets.LANGUAGE_PRIMER }}
+          JULEMODUS: ${{ secrets.JULEMODUS }}
         run: node scripts/velkomst_jul.js
 
       - name: Prepare Pages artifact
@@ -52,4 +51,5 @@ jobs:
           path: public
 
       - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4
