@@ -1,17 +1,35 @@
+
 name: Render Velkomst (safe)
 
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install
+
+      - name: Install deps
+        run: npm install
 
       - name: Build velkomst.mp3
         env:
@@ -25,8 +43,16 @@ jobs:
           JULEMODUS: ${{ secrets.JULEMODUS }}
         run: node scripts/velkomst.js > velkomst.mp3
 
-      - run: mkdir -p public && cp velkomst.mp3 public/velkomst.mp3 && ls -lh public/velkomst.mp3
-      - uses: actions/upload-pages-artifact@v3
+      - name: Prepare artifact
+        run: |
+          mkdir -p public
+          cp velkomst.mp3 public/velkomst.mp3
+          ls -lh public/
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
           path: public
-      - uses: actions/deploy-pages@v4
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
