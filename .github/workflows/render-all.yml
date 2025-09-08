@@ -17,8 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-    env:
-      TZ: Europe/Oslo
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,6 +32,7 @@ jobs:
 
       - name: Build velkomst.mp3
         env:
+          TZ: Europe/Oslo
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
           SKILBREI_LAT: ${{ secrets.SKILBREI_LAT }}
           SKILBREI_LON: ${{ secrets.SKILBREI_LON }}
@@ -44,6 +44,7 @@ jobs:
 
       - name: Build godkveld.mp3
         env:
+          TZ: Europe/Oslo
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
           SKILBREI_LAT: ${{ secrets.SKILBREI_LAT }}
           SKILBREI_LON: ${{ secrets.SKILBREI_LON }}
@@ -58,6 +59,7 @@ jobs:
           mkdir -p public
           cp velkomst.mp3 public/velkomst.mp3
           cp godkveld.mp3 public/godkveld.mp3
+          ls -lh public
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
