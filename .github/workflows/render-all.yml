@@ -3,23 +3,11 @@ name: Render & publish (velkomst + godkveld)
 on:
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: github-pages
-  cancel-in-progress: true
-
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -29,10 +17,9 @@ jobs:
       - name: Install deps
         run: npm install
 
-      # Bygg MP3-filene
       - name: Build velkomst.mp3
+        run: node scripts/velkomst.js > velkomst.mp3
         env:
-          TZ: Europe/Oslo
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
           SKILBREI_LAT: ${{ secrets.SKILBREI_LAT }}
           SKILBREI_LON: ${{ secrets.SKILBREI_LON }}
@@ -40,11 +27,10 @@ jobs:
           ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
           LANGUAGE_PRIMER: ${{ secrets.LANGUAGE_PRIMER }}
           JULEMODUS: ${{ secrets.JULEMODUS }}
-        run: node scripts/velkomst.js > velkomst.mp3
 
       - name: Build godkveld.mp3
+        run: node scripts/godkveld.js > godkveld.mp3
         env:
-          TZ: Europe/Oslo
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
           SKILBREI_LAT: ${{ secrets.SKILBREI_LAT }}
           SKILBREI_LON: ${{ secrets.SKILBREI_LON }}
@@ -52,9 +38,7 @@ jobs:
           ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
           LANGUAGE_PRIMER: ${{ secrets.LANGUAGE_PRIMER }}
           JULEMODUS: ${{ secrets.JULEMODUS }}
-        run: node scripts/godkveld.js > godkveld.mp3
 
-      # Legg i public/ så de blir publisert til Pages
       - name: Prepare Pages artifact
         run: |
           mkdir -p public
@@ -62,12 +46,13 @@ jobs:
           cp godkveld.mp3 public/godkveld.mp3
           ls -lh public/
 
-      # Behold også ZIP-artifact for enkel nedlasting/backup
       - name: Upload artifact (backup ZIP)
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
+          name: github-pages
           path: public
 
-      # Publiser til GitHub Pages
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
