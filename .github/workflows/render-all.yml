@@ -3,16 +3,17 @@ name: Render & publish (velkomst + godkveld)
 on:
   workflow_dispatch:
 
-permissions:
-  contents: write
-  pages: write
-  id-token: write
-
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -30,8 +31,6 @@ jobs:
           SKILBREI_LON: ${{ secrets.SKILBREI_LON }}
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
           ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
-          LANGUAGE_PRIMER: ${{ secrets.LANGUAGE_PRIMER }}
-          JULEMODUS: ${{ secrets.JULEMODUS }}
 
       - name: Build godkveld.mp3
         run: node scripts/godkveld.js > godkveld.mp3
@@ -41,28 +40,18 @@ jobs:
           SKILBREI_LON: ${{ secrets.SKILBREI_LON }}
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
           ELEVENLABS_VOICE_IDS: ${{ secrets.ELEVENLABS_VOICE_IDS }}
-          LANGUAGE_PRIMER: ${{ secrets.LANGUAGE_PRIMER }}
-          JULEMODUS: ${{ secrets.JULEMODUS }}
 
-      - name: Prepare public folder
+      - name: Prepare Pages artifact
         run: |
           mkdir -p public
           cp velkomst.mp3 public/velkomst.mp3
           cp godkveld.mp3 public/godkveld.mp3
-          ls -lh public/
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Upload artifact (backup ZIP)
+        uses: actions/upload-artifact@v4
         with:
+          name: github-pages
           path: public
 
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
       - name: Deploy to GitHub Pages
-        id: deployment
         uses: actions/deploy-pages@v4
